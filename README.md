@@ -1,6 +1,6 @@
-FlashEAGLE
-Student: Ebubekir Pulat
-Supervisor: Dr. Liang Yuan
+# FlashEAGLE
+## Student: Ebubekir Pulat
+## Supervisor: Dr. Liang Yuan
 
-Description:
+## Description:
 This repository is for the official implementation of FlashEAGLE.
