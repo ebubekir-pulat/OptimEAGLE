@@ -85,15 +85,15 @@ print("Mean Tokens/s: ", np.mean(token_rates))
 '''
 References
 
-1. Dao, T 2024, 'Flash{A}ttention-2: Faster Attention with Better Parallelism and Work Partitioning', International Conference on Learning Representations (ICLR).  
+1. Dao, T 2024, 'FlashAttention-2: Faster Attention with Better Parallelism and Work Partitioning', in International Conference on Learning Representations (ICLR).  
 
-2. Dao, T, Fu, DY, Ermon, S, Rudra, A & R{\'e}, C 2022, 'Flash{A}ttention: Fast and Memory-Efficient Exact Attention with {IO}-Awareness', Advances in Neural Information Processing Systems (NeurIPS).
+2. Dao, T, Fu, DY, Ermon, S, Rudra, A & Ré, C 2022, 'FlashAttention: Fast and Memory-Efficient Exact Attention with IO-Awareness', in Advances in Neural Information Processing Systems (NeurIPS).
 
-3. Li, Y, Wei, F, Zhang, C & Zhang, H 2024, '{EAGLE}: Speculative Sampling Requires Rethinking Feature Uncertainty', International Conference on Machine Learning.
+3. Li, Y, Wei, F, Zhang, C & Zhang, H 2024, 'EAGLE: Speculative Sampling Requires Rethinking Feature Uncertainty', in International Conference on Machine Learning.
 
-4. Li, Y, Wei, F, Zhang, C & Zhang, H 2024, '{EAGLE-2}: Faster Inference of Language Models with Dynamic Draft Trees', Empirical Methods in Natural Language Processing.
+4. Li, Y, Wei, F, Zhang, C & Zhang, H 2024, 'EAGLE-2: Faster Inference of Language Models with Dynamic Draft Trees', in Empirical Methods in Natural Language Processing.
 
-5. Li, Y, Wei, F, Zhang, C & Zhang, H 2025, '{EAGLE-3}: Scaling up Inference Acceleration of Large Language Models via Training-Time Test', <https://arxiv.org/abs/2503.01840>.
+5. Li, Y, Wei, F, Zhang, C & Zhang, H 2025, 'EAGLE-3: Scaling up Inference Acceleration of Large Language Models via Training-Time Test', <https://arxiv.org/abs/2503.01840>.
 
 @inproceedings{li2024eagle, 
 	author = {Yuhui Li and Fangyun Wei and Chao Zhang and Hongyang Zhang}, 

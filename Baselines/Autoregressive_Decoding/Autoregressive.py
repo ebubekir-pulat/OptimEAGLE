@@ -68,11 +68,11 @@ print("Mean Tokens/s: ", np.mean(token_rates))
 '''
 References
 
-1. Li, Y, Wei, F, Zhang, C & Zhang, H 2024, '{EAGLE}: Speculative Sampling Requires Rethinking Feature Uncertainty', International Conference on Machine Learning.
+1. Li, Y, Wei, F, Zhang, C & Zhang, H 2024, 'EAGLE: Speculative Sampling Requires Rethinking Feature Uncertainty', in International Conference on Machine Learning.
 
-2. Li, Y, Wei, F, Zhang, C & Zhang, H 2024, '{EAGLE-2}: Faster Inference of Language Models with Dynamic Draft Trees', Empirical Methods in Natural Language Processing.
+2. Li, Y, Wei, F, Zhang, C & Zhang, H 2024, 'EAGLE-2: Faster Inference of Language Models with Dynamic Draft Trees', in Empirical Methods in Natural Language Processing.
 
-3. Li, Y, Wei, F, Zhang, C & Zhang, H 2025, '{EAGLE-3}: Scaling up Inference Acceleration of Large Language Models via Training-Time Test', <https://arxiv.org/abs/2503.01840>.
+3. Li, Y, Wei, F, Zhang, C & Zhang, H 2025, 'EAGLE-3: Scaling up Inference Acceleration of Large Language Models via Training-Time Test', <https://arxiv.org/abs/2503.01840>.
 
 @inproceedings{li2024eagle, 
 	author = {Yuhui Li and Fangyun Wei and Chao Zhang and Hongyang Zhang}, 
