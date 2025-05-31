@@ -6,7 +6,7 @@ from eagle.model.ea_model import EaModel
 from fastchat.model import get_conversation_template
 
 # Below line from: https://stackoverflow.com/questions/50475635/loading-jsonl-file-as-json-objects
-jsonObj = pd.read_json(path_or_buf='../../Data/question.jsonl', lines=True)
+jsonObj = pd.read_json(path_or_buf='../question.jsonl', lines=True)
 prompts = [jsonObj.at[i, 'turns'] for i in range(len(jsonObj))]
 
 base_model_paths = ["lmsys/vicuna-7b-v1.3",
@@ -21,7 +21,7 @@ EAGLE_model_paths = ["yuhuili/EAGLE-Vicuna-7B-v1.3",
                      "yuhuili/EAGLE3-DeepSeek-R1-Distill-LLaMA-8B",
                      "yuhuili/EAGLE3-LLaMA3.3-Instruct-70B"]
 
-model_index = 3
+model_index = 1
 template = ""
 if "vicuna" in base_model_paths[model_index]:
     template = "vicuna"
@@ -31,7 +31,7 @@ else:
 wall_times = []
 token_rates = []
 
-# Below Code Block From https://github.com/SafeAILab/EAGLE
+# Below Code Block From: https://github.com/SafeAILab/EAGLE
 model = EaModel.from_pretrained(
     base_model_path=base_model_paths[model_index],
     ea_model_path=EAGLE_model_paths[model_index],
@@ -44,12 +44,12 @@ model = EaModel.from_pretrained(
     # offload_folder="offload" # Code Line From: https://github.com/nomic-ai/gpt4all/issues/239
 )
 
-# Below Code Line From https://github.com/SafeAILab/EAGLE
+# Below Code Line From: https://github.com/SafeAILab/EAGLE
 model.eval()
 
 for _ in range(3):
     for i in range(160, 480):
-        # Below Code Block From https://github.com/SafeAILab/EAGLE
+        # Below Code Block From: https://github.com/SafeAILab/EAGLE
         your_message = prompts[i]
         if len(your_message) == 1: 
             your_message = your_message[0]
@@ -59,13 +59,13 @@ for _ in range(3):
         conv.append_message(conv.roles[0], your_message)
         conv.append_message(conv.roles[1], None)
         prompt = conv.get_prompt()
-        input_ids=model.tokenizer([prompt]).input_ids
+        input_ids = model.tokenizer([prompt]).input_ids
         input_ids = torch.as_tensor(input_ids).cuda()
 
         start = time.perf_counter_ns()
 
-        # Below Code Line From https://github.com/SafeAILab/EAGLE
-        output_ids=model.eagenerate(input_ids, temperature=0.0, max_new_tokens=512)
+        # Below Code Line From: https://github.com/SafeAILab/EAGLE
+        output_ids = model.eagenerate(input_ids, temperature=0.0, max_new_tokens=512)
         #output=model.tokenizer.decode(output_ids[0])
 
         finish = time.perf_counter_ns()
