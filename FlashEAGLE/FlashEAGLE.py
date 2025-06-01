@@ -65,7 +65,7 @@ for _ in range(3):
         start = time.perf_counter_ns()
 
         # Below Code Line From: https://github.com/SafeAILab/EAGLE
-        output_ids = model.eagenerate(input_ids, temperature=0.0, max_new_tokens=512)
+        output_ids = model.eagenerate(input_ids, temperature=0.0, max_new_tokens=512, log=True)
         #output=model.tokenizer.decode(output_ids[0])
 
         finish = time.perf_counter_ns()
@@ -73,7 +73,7 @@ for _ in range(3):
         wall_times.append(elapsed)
         #print("Wall Clock Time (ns): ", elapsed)
 
-        num_tokens = len(output_ids)
+        num_tokens = len(output_ids[1])
         tokens_per_second = num_tokens / (elapsed * pow(10, -9))
         token_rates.append(tokens_per_second)
         #print("Tokens Per Second: ", tokens_per_second)
