@@ -21,12 +21,12 @@ EAGLE_model_paths = ["yuhuili/EAGLE-Vicuna-7B-v1.3",
                      "yuhuili/EAGLE3-DeepSeek-R1-Distill-LLaMA-8B",
                      "yuhuili/EAGLE3-LLaMA3.3-Instruct-70B"]
 
-model_index = 1
+model_index = 3
 template = ""
 if "vicuna" in base_model_paths[model_index]:
     template = "vicuna"
 else:
-    template = "llama-3-chat"
+    template = base_model_paths[model_index]
 
 wall_times = []
 token_rates = []
@@ -47,8 +47,13 @@ model = EaModel.from_pretrained(
 # Below Code Line From: https://github.com/SafeAILab/EAGLE
 model.eval()
 
+run = 1
+
 for _ in range(3):
     for i in range(160, 480):
+        print("Run: ", run)
+        run += 1
+
         # Below Code Block From: https://github.com/SafeAILab/EAGLE
         your_message = prompts[i]
         if len(your_message) == 1: 
@@ -65,7 +70,7 @@ for _ in range(3):
         start = time.perf_counter_ns()
 
         # Below Code Line From: https://github.com/SafeAILab/EAGLE
-        output_ids = model.eagenerate(input_ids, temperature=0.0, max_new_tokens=512, log=True)
+        output_ids = model.eagenerate(input_ids, temperature=0.0, max_new_tokens=256, log=True)
         #output=model.tokenizer.decode(output_ids[0])
 
         finish = time.perf_counter_ns()
@@ -73,7 +78,7 @@ for _ in range(3):
         wall_times.append(elapsed)
         #print("Wall Clock Time (ns): ", elapsed)
 
-        num_tokens = len(output_ids[1])
+        num_tokens = int(output_ids[1])
         tokens_per_second = num_tokens / (elapsed * pow(10, -9))
         token_rates.append(tokens_per_second)
         #print("Tokens Per Second: ", tokens_per_second)
@@ -94,6 +99,8 @@ References
 4. Li, Y, Wei, F, Zhang, C & Zhang, H 2024, 'EAGLE-2: Faster Inference of Language Models with Dynamic Draft Trees', in Empirical Methods in Natural Language Processing.
 
 5. Li, Y, Wei, F, Zhang, C & Zhang, H 2025, 'EAGLE-3: Scaling up Inference Acceleration of Large Language Models via Training-Time Test', <https://arxiv.org/abs/2503.01840>.
+
+6. Zheng, L, Chiang, WL, Sheng, Y, Zhuang, S, Wu, Z, Zhuang, Y, Lin, Z, Li, Z, Li, D, Xing, EP, Zhang, H, Gonzalez, JE & Stoica, I 2023, 'Judging LLM-as-a-Judge with MT-Bench and Chatbot Arena', <https://arxiv.org/abs/2306.05685>.
 
 @inproceedings{li2024eagle, 
 	author = {Yuhui Li and Fangyun Wei and Chao Zhang and Hongyang Zhang}, 
@@ -127,6 +134,14 @@ References
   author={Dao, Tri},
   booktitle={International Conference on Learning Representations (ICLR)},
   year={2024}
+}
+@misc{zheng2023judging,
+      title={Judging LLM-as-a-judge with MT-Bench and Chatbot Arena},
+      author={Lianmin Zheng and Wei-Lin Chiang and Ying Sheng and Siyuan Zhuang and Zhanghao Wu and Yonghao Zhuang and Zi Lin and Zhuohan Li and Dacheng Li and Eric. P Xing and Hao Zhang and Joseph E. Gonzalez and Ion Stoica},
+      year={2023},
+      eprint={2306.05685},
+      archivePrefix={arXiv},
+      primaryClass={cs.CL}
 }
 
 '''
