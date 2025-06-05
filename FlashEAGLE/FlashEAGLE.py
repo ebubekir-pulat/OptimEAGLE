@@ -5,84 +5,93 @@ import torch
 from eagle.model.ea_model import EaModel
 from fastchat.model import get_conversation_template
 
+# Getting Spec-Bench Questions
 # Below line from: https://stackoverflow.com/questions/50475635/loading-jsonl-file-as-json-objects
 jsonObj = pd.read_json(path_or_buf='../question.jsonl', lines=True)
 prompts = [jsonObj.at[i, 'turns'] for i in range(len(jsonObj))]
 
-base_model_paths = ["lmsys/vicuna-7b-v1.3",
-                    "lmsys/vicuna-13b-v1.3",
-                    "lmsys/vicuna-33b-v1.3",
+base_model_paths = ["lmsys/vicuna-13b-v1.3",
                     "deepseek-ai/DeepSeek-R1-Distill-Llama-8B",
+                    "meta-llama/Llama-3.1-8B-Instruct",
                     "meta-llama/Llama-3.3-70B-Instruct"]
 
-EAGLE_model_paths = ["yuhuili/EAGLE-Vicuna-7B-v1.3",
-                     "yuhuili/EAGLE3-Vicuna1.3-13B",
-                     "yuhuili/EAGLE-Vicuna-33B-v1.3",
+EAGLE_model_paths = ["yuhuili/EAGLE3-Vicuna1.3-13B",
                      "yuhuili/EAGLE3-DeepSeek-R1-Distill-LLaMA-8B",
+                     "yuhuili/EAGLE3-LLaMA3.1-Instruct-8B",
                      "yuhuili/EAGLE3-LLaMA3.3-Instruct-70B"]
 
-model_index = 3
-template = ""
-if "vicuna" in base_model_paths[model_index]:
-    template = "vicuna"
-else:
-    template = base_model_paths[model_index]
+def template_getter(model_index):
+    if model_index == 0:
+        return "vicuna"
+    elif model_index in [2, 3]:
+        return "llama-3-chat"
+    else:
+        return base_model_paths[model_index]
+    
 
+
+def model_init(model_index):
+    # Below Code Block From: https://github.com/SafeAILab/EAGLE
+    model = EaModel.from_pretrained(
+        base_model_path=base_model_paths[model_index],
+        ea_model_path=EAGLE_model_paths[model_index],
+        torch_dtype=torch.float16,
+        low_cpu_mem_usage=True,
+        device_map="auto",
+        total_token=-1,
+        attn_implementation="flash_attention_2",
+        trust_remote_code=True
+        # offload_folder="offload" # Code Line From: https://github.com/nomic-ai/gpt4all/issues/239
+    )
+
+    # Below Code Line From: https://github.com/SafeAILab/EAGLE
+    model.eval()
+    return model
+
+# Preparing for assessment
 wall_times = []
 token_rates = []
+models_to_test = [0, 1, 2]
+test_runs = 1
 
-# Below Code Block From: https://github.com/SafeAILab/EAGLE
-model = EaModel.from_pretrained(
-    base_model_path=base_model_paths[model_index],
-    ea_model_path=EAGLE_model_paths[model_index],
-    torch_dtype=torch.float16,
-    low_cpu_mem_usage=True,
-    device_map="auto",
-    total_token=-1,
-    attn_implementation="flash_attention_2",
-    trust_remote_code=True
-    # offload_folder="offload" # Code Line From: https://github.com/nomic-ai/gpt4all/issues/239
-)
+# Assessment Loop
+for model_index in models_to_test:
+    model = model_init(model_index)
+    for test_run in range(test_runs):
+        run = 1
+        for i in range(160, 480):
+            print("Test Run: ", test_run)
+            print("SB Question: ", run)
+            run += 1
 
-# Below Code Line From: https://github.com/SafeAILab/EAGLE
-model.eval()
+            # Below Code Block From: https://github.com/SafeAILab/EAGLE
+            your_message = prompts[i]
+            if len(your_message) == 1: 
+                your_message = your_message[0]
+            else: 
+                raise("Message Length Above 1")
+            conv = get_conversation_template(template_getter(model_index))
+            conv.append_message(conv.roles[0], your_message)
+            conv.append_message(conv.roles[1], None)
+            prompt = conv.get_prompt()
+            input_ids = model.tokenizer([prompt]).input_ids
+            input_ids = torch.as_tensor(input_ids).cuda()
 
-run = 1
+            start = time.perf_counter_ns()
 
-for _ in range(3):
-    for i in range(160, 480):
-        print("Run: ", run)
-        run += 1
+            # Below Code Line From: https://github.com/SafeAILab/EAGLE
+            output_ids = model.eagenerate(input_ids, temperature=0.0, max_new_tokens=256, log=True)
+            #output=model.tokenizer.decode(output_ids[0])
 
-        # Below Code Block From: https://github.com/SafeAILab/EAGLE
-        your_message = prompts[i]
-        if len(your_message) == 1: 
-            your_message = your_message[0]
-        else: 
-            raise("Message Length Above 1")
-        conv = get_conversation_template(template)
-        conv.append_message(conv.roles[0], your_message)
-        conv.append_message(conv.roles[1], None)
-        prompt = conv.get_prompt()
-        input_ids = model.tokenizer([prompt]).input_ids
-        input_ids = torch.as_tensor(input_ids).cuda()
+            finish = time.perf_counter_ns()
+            elapsed = finish - start
+            wall_times.append(elapsed)
 
-        start = time.perf_counter_ns()
+            num_tokens = int(output_ids[1])
+            tokens_per_second = num_tokens / (elapsed * pow(10, -9))
+            token_rates.append(tokens_per_second)
 
-        # Below Code Line From: https://github.com/SafeAILab/EAGLE
-        output_ids = model.eagenerate(input_ids, temperature=0.0, max_new_tokens=256, log=True)
-        #output=model.tokenizer.decode(output_ids[0])
-
-        finish = time.perf_counter_ns()
-        elapsed = finish - start
-        wall_times.append(elapsed)
-        #print("Wall Clock Time (ns): ", elapsed)
-
-        num_tokens = int(output_ids[1])
-        tokens_per_second = num_tokens / (elapsed * pow(10, -9))
-        token_rates.append(tokens_per_second)
-        #print("Tokens Per Second: ", tokens_per_second)
-
+# Print Results
 print("Results:")
 print("Mean Wall Time (ns): ", np.mean(wall_times))
 print("Mean Tokens/s: ", np.mean(token_rates))
