@@ -8,3 +8,4 @@ blobfile
 protobuf
 sentencepiece
 numpy
+datasets
