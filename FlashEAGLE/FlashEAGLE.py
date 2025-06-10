@@ -7,7 +7,7 @@ from fastchat.model import get_conversation_template
 from datasets import load_dataset
 
 # Login To Use Llama 3.1 Models
-# huggingface-cli login
+huggingface-cli login
 
 # Getting Spec-Bench Questions
 # Below line from: https://stackoverflow.com/questions/50475635/loading-jsonl-file-as-json-objects
@@ -60,7 +60,6 @@ def model_init(model_index):
         total_token=-1,
         attn_implementation="flash_attention_2",
         trust_remote_code=True
-        # offload_folder="offload" # Code Line From: https://github.com/nomic-ai/gpt4all/issues/239
     )
 
     # Below Code Line From: https://github.com/SafeAILab/EAGLE
@@ -68,13 +67,14 @@ def model_init(model_index):
     return model
 
 # Preparing for assessment
-wall_times = []
-token_rates = []
-models_to_test = [0, 1, 2]
+models_to_test = [2]
 test_runs = 3
 
 # Spec-Bench Assessment Loop
 for model_index in models_to_test:
+    wall_times = []
+    token_rates = []
+    avg_accept_lens = []
     model = model_init(model_index)
     for test_run in range(test_runs):
         run = 1
@@ -100,23 +100,31 @@ for model_index in models_to_test:
 
             # Below Code Line From: https://github.com/SafeAILab/EAGLE
             output_ids = model.eagenerate(input_ids, temperature=0.0, max_new_tokens=256, log=True)
-            #output=model.tokenizer.decode(output_ids[0])
 
             finish = time.perf_counter_ns()
             elapsed = finish - start
             wall_times.append(elapsed)
 
-            num_tokens = int(output_ids[1])
-            tokens_per_second = num_tokens / (elapsed * pow(10, -9))
+            new_tokens = int(output_ids[1])
+            tokens_per_second = new_tokens / (elapsed * pow(10, -9))
             token_rates.append(tokens_per_second)
 
-    # Print Results
-    print(f"Results for {base_model_paths[model_index]}:")
+            # Reference for below code block: https://github.com/SafeAILab/EAGLE/issues/153
+            steps = int(output_ids[2])
+            avg_accept_len = new_tokens / steps
+            avg_accept_lens.append(avg_accept_len)
+
+    # Print Spec-Bench Results
+    print(f"Spec-Bench Results for {base_model_paths[model_index]}:")
     print("Mean Wall Time (ns): ", np.mean(wall_times))
-    print("Mean Tokens/s: ", np.mean(token_rates))
+    print("Mean Tokens Generated/s: ", np.mean(token_rates))
+    print("Average Acceptance Length: ", np.mean(avg_accept_lens))
 
 # LongBench-E Assessment Loop
 for model_index in models_to_test:
+    wall_times = []
+    token_rates = []
+    avg_accept_lens = []
     model = model_init(model_index)
     for test_run in range(test_runs):
         run = 1
@@ -142,20 +150,25 @@ for model_index in models_to_test:
 
             # Below Code Line From: https://github.com/SafeAILab/EAGLE
             output_ids = model.eagenerate(input_ids, temperature=0.0, max_new_tokens=256, log=True)
-            #output=model.tokenizer.decode(output_ids[0])
 
             finish = time.perf_counter_ns()
             elapsed = finish - start
             wall_times.append(elapsed)
 
-            num_tokens = int(output_ids[1])
-            tokens_per_second = num_tokens / (elapsed * pow(10, -9))
+            new_tokens = int(output_ids[1])
+            tokens_per_second = new_tokens / (elapsed * pow(10, -9))
             token_rates.append(tokens_per_second)
 
-    # Print Results
-    print(f"Results for {base_model_paths[model_index]}:")
+            # Reference for below code block: https://github.com/SafeAILab/EAGLE/issues/153
+            steps = int(output_ids[2])
+            avg_accept_len = new_tokens / steps
+            avg_accept_lens.append(avg_accept_len)
+
+    # Print LongBench-E Results
+    print(f"LongBench-E Results for {base_model_paths[model_index]}:")
     print("Mean Wall Time (ns): ", np.mean(wall_times))
-    print("Mean Tokens/s: ", np.mean(token_rates))
+    print("Mean Tokens Generated/s: ", np.mean(token_rates))
+    print("Average Acceptance Length: ", np.mean(avg_accept_lens))
 
 
 '''
