@@ -78,41 +78,38 @@ for model_index in models_to_test:
     model = model_init(model_index)
     for test_run in range(test_runs):
         run = 1
-        for i in range(80, len(sb_prompts)):
+        for i in range(len(sb_prompts)):
             print("Test Run: ", test_run)
             print("SB Question: ", run)
             run += 1
 
-            # Below Code Block From: https://github.com/SafeAILab/EAGLE
-            your_message = sb_prompts[i]
-            if len(your_message) == 1: 
-                your_message = your_message[0]
-            else: 
-                raise("Message Length Above 1")
-            conv = get_conversation_template(template_getter(model_index))
-            conv.append_message(conv.roles[0], your_message)
-            conv.append_message(conv.roles[1], None)
-            prompt = conv.get_prompt()
-            input_ids = model.tokenizer([prompt]).input_ids
-            input_ids = torch.as_tensor(input_ids).cuda()
+            for question in sb_prompts[i]:
+                # Below Code Block From: https://github.com/SafeAILab/EAGLE
+                your_message = question
+                conv = get_conversation_template(template_getter(model_index))
+                conv.append_message(conv.roles[0], your_message)
+                conv.append_message(conv.roles[1], None)
+                prompt = conv.get_prompt()
+                input_ids = model.tokenizer([prompt]).input_ids
+                input_ids = torch.as_tensor(input_ids).cuda()
 
-            start = time.perf_counter_ns()
+                start = time.perf_counter_ns()
 
-            # Below Code Line From: https://github.com/SafeAILab/EAGLE
-            output_ids = model.eagenerate(input_ids, temperature=0.0, max_new_tokens=256, log=True)
+                # Below Code Line From: https://github.com/SafeAILab/EAGLE
+                output_ids = model.eagenerate(input_ids, temperature=0.0, max_new_tokens=256, log=True)
 
-            finish = time.perf_counter_ns()
-            elapsed = finish - start
-            wall_times.append(elapsed)
+                finish = time.perf_counter_ns()
+                elapsed = finish - start
+                wall_times.append(elapsed)
 
-            new_tokens = int(output_ids[1])
-            tokens_per_second = new_tokens / (elapsed * pow(10, -9))
-            token_rates.append(tokens_per_second)
+                new_tokens = int(output_ids[1])
+                tokens_per_second = new_tokens / (elapsed * pow(10, -9))
+                token_rates.append(tokens_per_second)
 
-            # Reference for below code block: https://github.com/SafeAILab/EAGLE/issues/153
-            steps = int(output_ids[2])
-            avg_accept_len = new_tokens / steps
-            avg_accept_lens.append(avg_accept_len)
+                # Reference for below code block: https://github.com/SafeAILab/EAGLE/issues/153
+                steps = int(output_ids[2])
+                avg_accept_len = new_tokens / steps
+                avg_accept_lens.append(avg_accept_len)
 
     # Print Spec-Bench Results
     print(f"Spec-Bench Results for {base_model_paths[model_index]}:")
