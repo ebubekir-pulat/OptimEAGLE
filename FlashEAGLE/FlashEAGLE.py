@@ -46,8 +46,6 @@ EAGLE_model_paths = ["yuhuili/EAGLE3-Vicuna1.3-13B",
 def template_getter(model_index):
     if model_index == 0:
         return "vicuna"
-    elif model_index in [2, 3]:
-        return "llama-3-chat"
     else:
         return base_model_paths[model_index]
 
