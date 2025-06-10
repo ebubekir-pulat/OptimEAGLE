@@ -154,27 +154,35 @@ for category in LIO_suggestions_set:
 
 '''
 
-''' 
+'''
 References
 
-1. 
+1. H. Xia, Z. Yang, Q. Dong, P. Wang, Y. Li, T. Ge, T. Liu, W. Li, and Z. Sui, “Unlocking efficiency in large
+language model inference: A comprehensive survey of speculative decoding,” in Findings of the Association
+for Computational Linguistics: ACL 2024, L.-W. Ku, A. Martins, and V. Srikumar, Eds. Bangkok,
+Thailand: Association for Computational Linguistics, Aug. 2024, pp. 7655–7671. [Online]. Available:
+https://aclanthology.org/2024.findings-acl.456/
 
-2.
+2. Y. Li, F. Wei, C. Zhang, and H. Zhang, “Eagle-3: Scaling up inference acceleration of large language models
+via training-time test,” 2025. [Online]. Available: https://arxiv.org/abs/2503.01840
 
-3.
+3. Y. Li, F. Wei, C. Zhang, and H. Zhang, “EAGLE: Speculative sampling requires rethinking feature
+uncertainty,” in Proceedings of the 41st International Conference on Machine Learning, ser. Proceedings
+of Machine Learning Research, R. Salakhutdinov, Z. Kolter, K. Heller, A. Weller, N. Oliver, J. Scarlett,
+and F. Berkenkamp, Eds., vol. 235. PMLR, 21–27 Jul 2024, pp. 28 935–28 948. [Online]. Available:
+https://proceedings.mlr.press/v235/li24bt.html
 
-4.
+4. L. Zheng, W.-L. Chiang, Y. Sheng, S. Zhuang, Z. Wu, Y. Zhuang, Z. Lin, Z. Li, D. Li, E. P. Xing, H. Zhang,
+J. E. Gonzalez, and I. Stoica, “Judging llm-as-a-judge with mt-bench and chatbot arena,” in Proceedings of
+the 37th International Conference on Neural Information Processing Systems, ser. NIPS ’23. Red Hook, NY,
+USA: Curran Associates Inc., 2023.
 
-5.
+5. Y. Li, F. Wei, C. Zhang, and H. Zhang, “EAGLE-2: Faster inference of language models with dynamic
+draft trees,” in Proceedings of the 2024 Conference on Empirical Methods in Natural Language Processing,
+Y. Al-Onaizan, M. Bansal, and Y.-N. Chen, Eds. Miami, Florida, USA: Association for Computational Linguistics,
+Nov. 2024, pp. 7421–7432. [Online]. Available: https://aclanthology.org/2024.emnlp-main.422/
 
-6.
-
-7.
-
-8.
-
-9.
-
-10. 
+6. DeepSeek-AI, “Deepseek-r1: Incentivizing reasoning capability in llms via reinforcement learning,” 2025. [Online].
+Available: https://arxiv.org/abs/2501.12948
 
 '''

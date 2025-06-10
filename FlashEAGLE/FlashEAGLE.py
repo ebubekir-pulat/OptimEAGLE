@@ -6,6 +6,9 @@ from eagle.model.ea_model import EaModel
 from fastchat.model import get_conversation_template
 from datasets import load_dataset
 
+# Login To Use Llama 3.1 Models
+# huggingface-cli login
+
 # Getting Spec-Bench Questions
 # Below line from: https://stackoverflow.com/questions/50475635/loading-jsonl-file-as-json-objects
 jsonObj = pd.read_json(path_or_buf='../question.jsonl', lines=True)
@@ -183,12 +186,9 @@ J. E. Gonzalez, and I. Stoica, “Judging llm-as-a-judge with mt-bench and chatb
 the 37th International Conference on Neural Information Processing Systems, ser. NIPS ’23. Red Hook, NY,
 USA: Curran Associates Inc., 2023.
 
-6.  T. Dao, D. Fu, S. Ermon, A. Rudra, and C. R´e, “Flashattention: Fast and memory-
-efficient exact attention with io-awareness,” in Advances in Neural Information Processing
-Systems, S. Koyejo, S. Mohamed, A. Agarwal, D. Belgrave, K. Cho, and A. Oh,
-Eds., vol. 35. Curran Associates, Inc., 2022, pp. 16 344–16 359. [Online]. Available:
-https://proceedings.neurips.cc/paperf iles/paper /2022/f ile/67d57c32e20f d0a7a302cb81d36e40d5 −
-P aper − Conf er ence.pdf
+6. T. Dao, D. Y. Fu, S. Ermon, A. Rudra, and C. Ré, “Flashattention: fast and memory-efficient exact attention
+with io-awareness,” in Proceedings of the 36th International Conference on Neural Information Processing
+Systems, ser. NIPS ’22. Red Hook, NY, USA: Curran Associates Inc., 2022.
 
 7. Y. Li, F. Wei, C. Zhang, and H. Zhang, “EAGLE-2: Faster inference of language models with dynamic
 draft trees,” in Proceedings of the 2024 Conference on Empirical Methods in Natural Language Processing,
@@ -267,6 +267,5 @@ pp. 3119–3137. [Online]. Available: https://aclanthology.org/2024.acl-long.172
 
 11. DeepSeek-AI, “Deepseek-r1: Incentivizing reasoning capability in llms via reinforcement learning,” 2025. [Online].
 Available: https://arxiv.org/abs/2501.12948
-
 
 '''
