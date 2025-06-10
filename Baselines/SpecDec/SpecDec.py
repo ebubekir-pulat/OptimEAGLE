@@ -2,70 +2,137 @@ import numpy as np
 import pandas as pd    
 from transformers import AutoModelForCausalLM, AutoTokenizer
 import time
-
-# Below line from: https://stackoverflow.com/questions/50475635/loading-jsonl-file-as-json-objects
-jsonObj = pd.read_json(path_or_buf='../../Data/question.jsonl', lines=True)
-prompts = [jsonObj.at[i, 'turns'] for i in range(len(jsonObj))]
+from fastchat.model import get_conversation_template
+from datasets import load_dataset
 
 LLM_pairs = [["lmsys/vicuna-13b-v1.3", "double7/vicuna-68m"],  # [target model, draft model]
-             ["deepseek-ai/DeepSeek-R1-Distill-Llama-8B", "JackFram/llama-68m"]]
+             ["deepseek-ai/DeepSeek-R1-Distill-Llama-8B", "JackFram/llama-68m"],
+             ["meta-llama/Llama-3.1-8B-Instruct", "JackFram/llama-68m"],
+             ["meta-llama/Llama-3.3-70B-Instruct", "JackFram/llama-68m"]]
 
-# Below Code Block From: https://huggingface.co/blog/assisted-generation
-checkpoint = LLM_pairs[1][0]
-assistant_checkpoint = LLM_pairs[1][1]
-tokenizer = AutoTokenizer.from_pretrained(checkpoint)
-model = AutoModelForCausalLM.from_pretrained(checkpoint)
-assistant_model = AutoModelForCausalLM.from_pretrained(assistant_checkpoint)
+# Login To Use Llama 3.1 Models
+huggingface-cli login
 
-template = ""
-if "vicuna" in checkpoint:
-    template = "vicuna"
-else:
-    template = "llama-3-chat"
+# Getting Spec-Bench Questions
+# Below line from: https://stackoverflow.com/questions/50475635/loading-jsonl-file-as-json-objects
+jsonObj = pd.read_json(path_or_buf='../question.jsonl', lines=True)
+sb_prompts = [jsonObj.at[i, 'turns'] for i in range(len(jsonObj))]
 
-wall_times = []
-token_rates = []
+# Getting LongBench-E Questions
+lb_prompts = []
 
-# Below Code Line From: https://github.com/SafeAILab/EAGLE
-model.eval()
+# Reference for Below Code Block: https://huggingface.co/datasets/THUDM/LongBench 
+datasets = ["qasper", "multifieldqa_en", "hotpotqa", "2wikimqa", "gov_report", "multi_news", "trec", \
+            "triviaqa", "samsum", "passage_count", "passage_retrieval_en", "lcc", "repobench-p"]
+for dataset in datasets:
+    data = load_dataset('THUDM/LongBench', f"{dataset}_e", split='test')
+    counter = 0
 
-for _ in range(3):
-    for i in range(160, 480):
-        # Below Code Block From: https://github.com/SafeAILab/EAGLE
-        # Code Block Starts Here
-        your_message = prompts[i]
-        if len(your_message) == 1: 
-            your_message = your_message[0]
-        else: 
-            raise("Message Length Above 1")
-        conv = get_conversation_template(template)
-        conv.append_message(conv.roles[0], your_message)
-        conv.append_message(conv.roles[1], None)
-        prompt = conv.get_prompt()
-        # Code Blocks Ends Here 
+    for i in range(len(data)):
+        if counter == 30:
+            break
 
-        # Below Code Line From: https://huggingface.co/blog/assisted-generation
-        inputs = tokenizer(prompt, return_tensors="pt")
+        if data[i]["language"] != "zh":
+            prompt = data[i]["context"] + "\n\n" + data[i]["input"]
+            lb_prompts.append(prompt)
+            counter += 1
 
-        start = time.perf_counter_ns()
+def template_getter(model_index):
+    if model_index == 0:
+        return "vicuna"
+    else:
+        return LLM_pairs[model_index][0]
+    
+def model_init(model_index):
+    # Below Code Block From: https://huggingface.co/blog/assisted-generation
+    checkpoint = LLM_pairs[model_index][0]
+    assistant_checkpoint = LLM_pairs[model_index][1]
+    tokenizer = AutoTokenizer.from_pretrained(checkpoint)
+    model = AutoModelForCausalLM.from_pretrained(checkpoint)
+    assistant_model = AutoModelForCausalLM.from_pretrained(assistant_checkpoint)
 
-        # 2 Code Lines Below From: https://huggingface.co/blog/assisted-generation
-        outputs = model.generate(**inputs, assistant_model=assistant_model, max_new_tokens=512)
-        #print("Output: ", tokenizer.batch_decode(outputs, skip_special_tokens=True))
+    # Below Code Line From: https://github.com/SafeAILab/EAGLE
+    model.eval()
+    return model, assistant_model, tokenizer
 
-        finish = time.perf_counter_ns()
-        elapsed = finish - start
-        wall_times.append(elapsed)
-        #print("Wall Clock Time (ns): ", elapsed)
 
-        num_tokens = len(outputs)
-        tokens_per_second = num_tokens / (elapsed * pow(10, -9))
-        token_rates.append(tokens_per_second)
-        #print("Tokens Per Second: ", tokens_per_second)
+# Preparing for assessment
+models_to_test = [0, 1, 2, 3]
+test_runs = 3
 
-print("Results:")
-print("Mean Wall Time (ns): ", np.mean(wall_times))
-print("Mean Tokens/s: ", np.mean(token_rates))
+# Spec-Bench Assessment Loop
+for model_index in models_to_test:
+    wall_times = []
+    model, assistant_model, tokenizer = model_init(model_index)
+    for test_run in range(test_runs):
+        run = 1
+        for i in range(len(sb_prompts)):
+            print("Test Run: ", test_run)
+            print("SB Question: ", run)
+            run += 1
+
+            for question in sb_prompts[i]:
+                # Below Code Block From: https://github.com/SafeAILab/EAGLE
+                your_message = question
+                conv = get_conversation_template(template_getter(model_index))
+                conv.append_message(conv.roles[0], your_message)
+                conv.append_message(conv.roles[1], None)
+                prompt = conv.get_prompt()
+
+                # Below Code Line From: https://huggingface.co/blog/assisted-generation
+                inputs = tokenizer(prompt, return_tensors="pt")
+
+                start = time.perf_counter_ns()
+
+                # 2 Code Lines Below From: https://huggingface.co/blog/assisted-generation
+                outputs = model.generate(**inputs, assistant_model=assistant_model, max_new_tokens=256)
+                #print("Output: ", tokenizer.batch_decode(outputs, skip_special_tokens=True))
+
+                finish = time.perf_counter_ns()
+                elapsed = finish - start
+                wall_times.append(elapsed)
+
+    # Print Spec-Bench Results
+    print(f"Spec-Bench Results for {LLM_pairs[model_index][0]}:")
+    print("Mean Wall Time (ns): ", np.mean(wall_times))
+
+
+# LongBench-E Assessment Loop
+for model_index in models_to_test:
+    wall_times = []
+    model, assistant_model, tokenizer = model_init(model_index)
+    for test_run in range(test_runs):
+        run = 1
+        for i in range(len(sb_prompts)):
+            print("Test Run: ", test_run)
+            print("SB Question: ", run)
+            run += 1
+
+            for question in sb_prompts[i]:
+                # Below Code Block From: https://github.com/SafeAILab/EAGLE
+                your_message = question
+                conv = get_conversation_template(template_getter(model_index))
+                conv.append_message(conv.roles[0], your_message)
+                conv.append_message(conv.roles[1], None)
+                prompt = conv.get_prompt()
+
+                # Below Code Line From: https://huggingface.co/blog/assisted-generation
+                inputs = tokenizer(prompt, return_tensors="pt")
+
+                start = time.perf_counter_ns()
+
+                # 2 Code Lines Below From: https://huggingface.co/blog/assisted-generation
+                outputs = model.generate(**inputs, assistant_model=assistant_model, max_new_tokens=256)
+                #print("Output: ", tokenizer.batch_decode(outputs, skip_special_tokens=True))
+
+                finish = time.perf_counter_ns()
+                elapsed = finish - start
+                wall_times.append(elapsed)
+
+    # Print LongBench-E Results
+    print(f"Spec-Bench Results for {LLM_pairs[model_index][0]}:")
+    print("Mean Wall Time (ns): ", np.mean(wall_times))
+
 
 '''
 References

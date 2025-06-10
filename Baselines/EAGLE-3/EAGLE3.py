@@ -4,11 +4,34 @@ import numpy as np
 import torch
 from eagle.model.ea_model import EaModel
 from fastchat.model import get_conversation_template
+from datasets import load_dataset
+
+# Login To Use Llama 3.1 Models
+huggingface-cli login
 
 # Getting Spec-Bench Questions
 # Below line from: https://stackoverflow.com/questions/50475635/loading-jsonl-file-as-json-objects
 jsonObj = pd.read_json(path_or_buf='../question.jsonl', lines=True)
-prompts = [jsonObj.at[i, 'turns'] for i in range(len(jsonObj))]
+sb_prompts = [jsonObj.at[i, 'turns'] for i in range(len(jsonObj))]
+
+# Getting LongBench-E Questions
+lb_prompts = []
+
+# Reference for Below Code Block: https://huggingface.co/datasets/THUDM/LongBench 
+datasets = ["qasper", "multifieldqa_en", "hotpotqa", "2wikimqa", "gov_report", "multi_news", "trec", \
+            "triviaqa", "samsum", "passage_count", "passage_retrieval_en", "lcc", "repobench-p"]
+for dataset in datasets:
+    data = load_dataset('THUDM/LongBench', f"{dataset}_e", split='test')
+    counter = 0
+
+    for i in range(len(data)):
+        if counter == 30:
+            break
+
+        if data[i]["language"] != "zh":
+            prompt = data[i]["context"] + "\n\n" + data[i]["input"]
+            lb_prompts.append(prompt)
+            counter += 1
 
 base_model_paths = ["lmsys/vicuna-13b-v1.3",
                     "deepseek-ai/DeepSeek-R1-Distill-Llama-8B",
@@ -23,8 +46,6 @@ EAGLE_model_paths = ["yuhuili/EAGLE3-Vicuna1.3-13B",
 def template_getter(model_index):
     if model_index == 0:
         return "vicuna"
-    elif model_index in [2, 3]:
-        return "llama-3-chat"
     else:
         return base_model_paths[model_index]
 
@@ -37,7 +58,6 @@ def model_init(model_index):
         low_cpu_mem_usage=True,
         device_map="auto",
         total_token=-1
-        # offload_folder="offload" # Code Line From: https://github.com/nomic-ai/gpt4all/issues/239
     )
 
     # Below Code Line From: https://github.com/SafeAILab/EAGLE
@@ -45,23 +65,71 @@ def model_init(model_index):
     return model
 
 # Preparing for assessment
-wall_times = []
-token_rates = []
-models_to_test = [0, 1, 2]
-test_runs = 1
+models_to_test = [0, 1, 2, 3]
+test_runs = 3
 
-# Assessment Loop
+# Spec-Bench Assessment Loop
 for model_index in models_to_test:
+    wall_times = []
+    token_rates = []
+    avg_accept_lens = []
     model = model_init(model_index)
     for test_run in range(test_runs):
         run = 1
-        for i in range(160, 480):
+        for i in range(len(sb_prompts)):
             print("Test Run: ", test_run)
             print("SB Question: ", run)
             run += 1
 
+            for question in sb_prompts[i]:
+                # Below Code Block From: https://github.com/SafeAILab/EAGLE
+                your_message = question
+                conv = get_conversation_template(template_getter(model_index))
+                conv.append_message(conv.roles[0], your_message)
+                conv.append_message(conv.roles[1], None)
+                prompt = conv.get_prompt()
+                input_ids = model.tokenizer([prompt]).input_ids
+                input_ids = torch.as_tensor(input_ids).cuda()
+
+                start = time.perf_counter_ns()
+
+                # Below Code Line From: https://github.com/SafeAILab/EAGLE
+                output_ids = model.eagenerate(input_ids, temperature=0.0, max_new_tokens=256, log=True)
+
+                finish = time.perf_counter_ns()
+                elapsed = finish - start
+                wall_times.append(elapsed)
+
+                new_tokens = int(output_ids[1])
+                tokens_per_second = new_tokens / (elapsed * pow(10, -9))
+                token_rates.append(tokens_per_second)
+
+                # Reference for below code block: https://github.com/SafeAILab/EAGLE/issues/153
+                steps = int(output_ids[2])
+                avg_accept_len = new_tokens / steps
+                avg_accept_lens.append(avg_accept_len)
+
+    # Print Spec-Bench Results
+    print(f"Spec-Bench Results for {base_model_paths[model_index]}:")
+    print("Mean Wall Time (ns): ", np.mean(wall_times))
+    print("Mean Tokens Generated/s: ", np.mean(token_rates))
+    print("Average Acceptance Length: ", np.mean(avg_accept_lens))
+
+# LongBench-E Assessment Loop
+for model_index in models_to_test:
+    wall_times = []
+    token_rates = []
+    avg_accept_lens = []
+    model = model_init(model_index)
+    for test_run in range(test_runs):
+        run = 1
+        for i in range(len(lb_prompts)):
+            print("Test Run: ", test_run)
+            print("LB Question: ", run)
+            run += 1
+
             # Below Code Block From: https://github.com/SafeAILab/EAGLE
-            your_message = prompts[i]
+            your_message = lb_prompts[i]
             if len(your_message) == 1: 
                 your_message = your_message[0]
             else: 
@@ -77,20 +145,26 @@ for model_index in models_to_test:
 
             # Below Code Line From: https://github.com/SafeAILab/EAGLE
             output_ids = model.eagenerate(input_ids, temperature=0.0, max_new_tokens=256, log=True)
-            #output=model.tokenizer.decode(output_ids[0])
 
             finish = time.perf_counter_ns()
             elapsed = finish - start
             wall_times.append(elapsed)
 
-            num_tokens = int(output_ids[1])
-            tokens_per_second = num_tokens / (elapsed * pow(10, -9))
+            new_tokens = int(output_ids[1])
+            tokens_per_second = new_tokens / (elapsed * pow(10, -9))
             token_rates.append(tokens_per_second)
 
-# Print Results
-print("Results:")
-print("Mean Wall Time (ns): ", np.mean(wall_times))
-print("Mean Tokens/s: ", np.mean(token_rates))
+            # Reference for below code block: https://github.com/SafeAILab/EAGLE/issues/153
+            steps = int(output_ids[2])
+            avg_accept_len = new_tokens / steps
+            avg_accept_lens.append(avg_accept_len)
+
+    # Print LongBench-E Results
+    print(f"LongBench-E Results for {base_model_paths[model_index]}:")
+    print("Mean Wall Time (ns): ", np.mean(wall_times))
+    print("Mean Tokens Generated/s: ", np.mean(token_rates))
+    print("Average Acceptance Length: ", np.mean(avg_accept_lens))
+
 
 '''
 References

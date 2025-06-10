@@ -67,7 +67,7 @@ def model_init(model_index):
     return model
 
 # Preparing for assessment
-models_to_test = [2]
+models_to_test = [2, 3]
 test_runs = 3
 
 # Spec-Bench Assessment Loop
