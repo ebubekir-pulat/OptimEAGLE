@@ -103,12 +103,12 @@ for model_index in models_to_test:
     model, assistant_model, tokenizer = model_init(model_index)
     for test_run in range(test_runs):
         run = 1
-        for i in range(len(sb_prompts)):
+        for i in range(len(lb_prompts)):
             print("Test Run: ", test_run)
-            print("SB Question: ", run)
+            print("LB Question: ", run)
             run += 1
 
-            for question in sb_prompts[i]:
+            for question in lb_prompts[i]:
                 # Below Code Block From: https://github.com/SafeAILab/EAGLE
                 your_message = question
                 conv = get_conversation_template(template_getter(model_index))
@@ -130,7 +130,7 @@ for model_index in models_to_test:
                 wall_times.append(elapsed)
 
     # Print LongBench-E Results
-    print(f"Spec-Bench Results for {LLM_pairs[model_index][0]}:")
+    print(f"LongBench-E Results for {LLM_pairs[model_index][0]}:")
     print("Mean Wall Time (ns): ", np.mean(wall_times))
 
 
