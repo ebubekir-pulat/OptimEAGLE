@@ -6,9 +6,6 @@ from eagle.model.ea_model import EaModel
 from fastchat.model import get_conversation_template
 from datasets import load_dataset
 
-# Login To Use Llama 3.1 Models
-huggingface-cli login
-
 # Getting Spec-Bench Questions
 # Below line from: https://stackoverflow.com/questions/50475635/loading-jsonl-file-as-json-objects
 jsonObj = pd.read_json(path_or_buf='../question.jsonl', lines=True)

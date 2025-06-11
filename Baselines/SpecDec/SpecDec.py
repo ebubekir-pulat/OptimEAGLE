@@ -10,9 +10,6 @@ LLM_pairs = [["lmsys/vicuna-13b-v1.3", "double7/vicuna-68m"],  # [target model, 
              ["meta-llama/Llama-3.1-8B-Instruct", "JackFram/llama-68m"],
              ["meta-llama/Llama-3.3-70B-Instruct", "JackFram/llama-68m"]]
 
-# Login To Use Llama 3.1 Models
-huggingface-cli login
-
 # Getting Spec-Bench Questions
 # Below line from: https://stackoverflow.com/questions/50475635/loading-jsonl-file-as-json-objects
 jsonObj = pd.read_json(path_or_buf='../question.jsonl', lines=True)
