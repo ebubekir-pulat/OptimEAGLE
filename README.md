@@ -10,3 +10,6 @@ Get Necessary Packages Using:
 '''
 pip install -r requirements.txt
 ''' 
+
+Use Python 3.12 Conda Environment
+conda create -n flash_eagle python=3.12
