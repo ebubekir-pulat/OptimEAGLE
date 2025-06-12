@@ -12,7 +12,6 @@ from fastchat.model import get_conversation_template
 jsonObj = pd.read_json(path_or_buf='../question.jsonl', lines=True)
 sb_prompts = [jsonObj.at[i, 'turns'] for i in range(len(jsonObj))]
 
-
 base_model_paths = ["lmsys/vicuna-13b-v1.3",
                     "deepseek-ai/DeepSeek-R1-Distill-Llama-8B",
                     "meta-llama/Llama-3.1-8B-Instruct",
@@ -35,9 +34,7 @@ def model_init(model_index):
         base_model_path=base_model_paths[model_index],
         ea_model_path=EAGLE_model_paths[model_index],
         torch_dtype=torch.float16,
-        low_cpu_mem_usage=True,
         device_map="auto",
-        total_token=-1,
         attn_implementation="flash_attention_2",
         trust_remote_code=True
     )
@@ -51,6 +48,11 @@ models_to_test = [2, 3]
 test_runs = 3
 max_new_tokens = 128
 temp = 0.0
+
+print("\nEvaluation Settings Chosen:")
+print("Test Runs: ", test_runs)
+print("Max New Tokens: ", max_new_tokens)
+print("Temperature: ", temp, "\n")
 
 # Spec-Bench Assessment Loop
 for model_index in models_to_test:
@@ -199,13 +201,7 @@ Y. Chen, Y. Hu, Y. Jia, Y. Qi, Y. Li, Y. Zhang, Y. Zhang, Y. Adi, Y. Nam, Yu, Wa
 Y. Li, Y. He, Z. Rait, Z. DeVito, Z. Rosnbrick, Z. Wen, Z. Yang, Z. Zhao, and Z. Ma, “The llama 3 herd of
 models,” 2024. [Online]. Available: https://arxiv.org/abs/2407.21783
 
-10. Y. Bai, X. Lv, J. Zhang, H. Lyu, J. Tang, Z. Huang, Z. Du, X. Liu, A. Zeng, L. Hou, Y. Dong, J. Tang, and
-J. Li, “LongBench: A bilingual, multitask benchmark for long context understanding,” in Proceedings of the
-62nd Annual Meeting of the Association for Computational Linguistics (Volume 1: Long Papers), L.-W. Ku,
-A. Martins, and V. Srikumar, Eds. Bangkok, Thailand: Association for Computational Linguistics, Aug. 2024,
-pp. 3119–3137. [Online]. Available: https://aclanthology.org/2024.acl-long.172/
-
-11. DeepSeek-AI, “Deepseek-r1: Incentivizing reasoning capability in llms via reinforcement learning,” 2025. [Online].
+10. DeepSeek-AI, “Deepseek-r1: Incentivizing reasoning capability in llms via reinforcement learning,” 2025. [Online].
 Available: https://arxiv.org/abs/2501.12948
 
 '''
