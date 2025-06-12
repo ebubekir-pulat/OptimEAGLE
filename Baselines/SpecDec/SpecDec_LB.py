@@ -1,5 +1,6 @@
-import numpy as np
-import pandas as pd    
+print("\n\n*******************************\nStarting SpecDec_LB.py\n\n")
+
+import numpy as np 
 from transformers import AutoModelForCausalLM, AutoTokenizer
 import time
 from fastchat.model import get_conversation_template
@@ -10,11 +11,6 @@ LLM_pairs = [["lmsys/vicuna-13b-v1.3", "double7/vicuna-68m"],  # [target model, 
              ["meta-llama/Llama-3.1-8B-Instruct", "JackFram/llama-68m"],
              ["meta-llama/Llama-3.3-70B-Instruct", "JackFram/llama-68m"]]
 
-# Getting Spec-Bench Questions
-# Below line from: https://stackoverflow.com/questions/50475635/loading-jsonl-file-as-json-objects
-jsonObj = pd.read_json(path_or_buf='../question.jsonl', lines=True)
-sb_prompts = [jsonObj.at[i, 'turns'] for i in range(len(jsonObj))]
-
 # Getting LongBench-E Questions
 lb_prompts = []
 
@@ -23,16 +19,22 @@ datasets = ["qasper", "multifieldqa_en", "hotpotqa", "2wikimqa", "gov_report", "
             "triviaqa", "samsum", "passage_count", "passage_retrieval_en", "lcc", "repobench-p"]
 for dataset in datasets:
     data = load_dataset('THUDM/LongBench', f"{dataset}_e", split='test')
-    counter = 0
+    all_lb_prompts = []
 
     for i in range(len(data)):
-        if counter == 30:
-            break
-
         if data[i]["language"] != "zh":
             prompt = data[i]["context"] + "\n\n" + data[i]["input"]
-            lb_prompts.append(prompt)
-            counter += 1
+            all_lb_prompts.append(prompt)
+    
+    all_lb_prompts.sort(key=len)
+    counter = 0
+
+    for i in range(0, len(all_lb_prompts), 16):
+        if counter == 15:
+            break
+
+        lb_prompts.append(all_lb_prompts[i])
+        counter += 1
 
 def template_getter(model_index):
     if model_index == 0:
@@ -47,57 +49,22 @@ def model_init(model_index):
     tokenizer = AutoTokenizer.from_pretrained(checkpoint)
     model = AutoModelForCausalLM.from_pretrained(checkpoint)
     assistant_model = AutoModelForCausalLM.from_pretrained(assistant_checkpoint)
+    assistant_tokenizer = AutoTokenizer.from_pretrained(assistant_checkpoint)
 
     # Below Code Line From: https://github.com/SafeAILab/EAGLE
     model.eval()
-    return model, assistant_model, tokenizer
+    return model, assistant_model, tokenizer, assistant_tokenizer
 
 
 # Preparing for assessment
 models_to_test = [0, 1, 2, 3]
 test_runs = 3
-
-# Spec-Bench Assessment Loop
-for model_index in models_to_test:
-    wall_times = []
-    model, assistant_model, tokenizer = model_init(model_index)
-    for test_run in range(test_runs):
-        run = 1
-        for i in range(len(sb_prompts)):
-            print("Test Run: ", test_run)
-            print("SB Question: ", run)
-            run += 1
-
-            for question in sb_prompts[i]:
-                # Below Code Block From: https://github.com/SafeAILab/EAGLE
-                your_message = question
-                conv = get_conversation_template(template_getter(model_index))
-                conv.append_message(conv.roles[0], your_message)
-                conv.append_message(conv.roles[1], None)
-                prompt = conv.get_prompt()
-
-                # Below Code Line From: https://huggingface.co/blog/assisted-generation
-                inputs = tokenizer(prompt, return_tensors="pt")
-
-                start = time.perf_counter_ns()
-
-                # 2 Code Lines Below From: https://huggingface.co/blog/assisted-generation
-                outputs = model.generate(**inputs, assistant_model=assistant_model, max_new_tokens=256)
-                #print("Output: ", tokenizer.batch_decode(outputs, skip_special_tokens=True))
-
-                finish = time.perf_counter_ns()
-                elapsed = finish - start
-                wall_times.append(elapsed)
-
-    # Print Spec-Bench Results
-    print(f"Spec-Bench Results for {LLM_pairs[model_index][0]}:")
-    print("Mean Wall Time (ns): ", np.mean(wall_times))
-
+max_new_tokens = 128
 
 # LongBench-E Assessment Loop
 for model_index in models_to_test:
     wall_times = []
-    model, assistant_model, tokenizer = model_init(model_index)
+    model, assistant_model, tokenizer, assistant_tokenizer = model_init(model_index)
     for test_run in range(test_runs):
         run = 1
         for i in range(len(lb_prompts)):
@@ -118,8 +85,9 @@ for model_index in models_to_test:
 
                 start = time.perf_counter_ns()
 
-                # 2 Code Lines Below From: https://huggingface.co/blog/assisted-generation
-                outputs = model.generate(**inputs, assistant_model=assistant_model, max_new_tokens=256)
+                # 3 Code Lines Below From: https://huggingface.co/blog/assisted-generation
+                outputs = model.generate(**inputs, assistant_model=assistant_model, tokenizer=tokenizer, 
+                                         assistant_tokenizer=assistant_tokenizer, max_new_tokens=max_new_tokens)
                 #print("Output: ", tokenizer.batch_decode(outputs, skip_special_tokens=True))
 
                 finish = time.perf_counter_ns()
@@ -134,36 +102,30 @@ for model_index in models_to_test:
 '''
 References
 
-1. H. Xia, Z. Yang, Q. Dong, P. Wang, Y. Li, T. Ge, T. Liu, W. Li, and Z. Sui, “Unlocking efficiency in large
-language model inference: A comprehensive survey of speculative decoding,” in Findings of the Association
-for Computational Linguistics: ACL 2024, L.-W. Ku, A. Martins, and V. Srikumar, Eds. Bangkok,
-Thailand: Association for Computational Linguistics, Aug. 2024, pp. 7655–7671. [Online]. Available:
-https://aclanthology.org/2024.findings-acl.456/
-
-2. Y. Li, F. Wei, C. Zhang, and H. Zhang, “Eagle-3: Scaling up inference acceleration of large language models
+1. Y. Li, F. Wei, C. Zhang, and H. Zhang, “Eagle-3: Scaling up inference acceleration of large language models
 via training-time test,” 2025. [Online]. Available: https://arxiv.org/abs/2503.01840
 
-3. Y. Li, F. Wei, C. Zhang, and H. Zhang, “EAGLE: Speculative sampling requires rethinking feature
+2. Y. Li, F. Wei, C. Zhang, and H. Zhang, “EAGLE: Speculative sampling requires rethinking feature
 uncertainty,” in Proceedings of the 41st International Conference on Machine Learning, ser. Proceedings
 of Machine Learning Research, R. Salakhutdinov, Z. Kolter, K. Heller, A. Weller, N. Oliver, J. Scarlett,
 and F. Berkenkamp, Eds., vol. 235. PMLR, 21–27 Jul 2024, pp. 28 935–28 948. [Online]. Available:
 https://proceedings.mlr.press/v235/li24bt.html
 
-4. L. Zheng, W.-L. Chiang, Y. Sheng, S. Zhuang, Z. Wu, Y. Zhuang, Z. Lin, Z. Li, D. Li, E. P. Xing, H. Zhang,
+3. L. Zheng, W.-L. Chiang, Y. Sheng, S. Zhuang, Z. Wu, Y. Zhuang, Z. Lin, Z. Li, D. Li, E. P. Xing, H. Zhang,
 J. E. Gonzalez, and I. Stoica, “Judging llm-as-a-judge with mt-bench and chatbot arena,” in Proceedings of
 the 37th International Conference on Neural Information Processing Systems, ser. NIPS ’23. Red Hook, NY,
 USA: Curran Associates Inc., 2023.
 
-5. Y. Li, F. Wei, C. Zhang, and H. Zhang, “EAGLE-2: Faster inference of language models with dynamic
+4. Y. Li, F. Wei, C. Zhang, and H. Zhang, “EAGLE-2: Faster inference of language models with dynamic
 draft trees,” in Proceedings of the 2024 Conference on Empirical Methods in Natural Language Processing,
 Y. Al-Onaizan, M. Bansal, and Y.-N. Chen, Eds. Miami, Florida, USA: Association for Computational Linguistics,
 Nov. 2024, pp. 7421–7432. [Online]. Available: https://aclanthology.org/2024.emnlp-main.422/
 
-6. W.-L. Chiang, Z. Li, Z. Lin, Y. Sheng, Z. Wu, H. Zhang, L. Zheng, S. Zhuang, Y. Zhuang, J. E. Gonzalez,
+5. W.-L. Chiang, Z. Li, Z. Lin, Y. Sheng, Z. Wu, H. Zhang, L. Zheng, S. Zhuang, Y. Zhuang, J. E. Gonzalez,
 I. Stoica, and E. P. Xing, “Vicuna: An open-source chatbot impressing gpt-4 with 90%* chatgpt quality,” March
 2023. [Online]. Available: https://lmsys.org/blog/2023-03-30-vicuna/
 
-7. A. Grattafiori, A. Dubey, A. Jauhri, A. Pandey, A. Kadian, A. Al-Dahle, A. Letman, A. Mathur, A. Schelten,
+6. A. Grattafiori, A. Dubey, A. Jauhri, A. Pandey, A. Kadian, A. Al-Dahle, A. Letman, A. Mathur, A. Schelten,
 A. Vaughan, A. Yang, A. Fan, A. Goyal, A. Hartshorn, A. Yang, A. Mitra, A. Sravankumar, A. Korenev,
 A. Hinsvark, A. Rao, A. Zhang, A. Rodriguez, A. Gregerson, A. Spataru, B. Roziere, B. Biron, B. Tang, B. Chern,
 C. Caucheteux, C. Nayak, C. Bi, C. Marra, C. McConnell, C. Keller, C. Touret, C. Wu, C. Wong, C. C. Ferrer,
@@ -223,23 +185,25 @@ Y. Chen, Y. Hu, Y. Jia, Y. Qi, Y. Li, Y. Zhang, Y. Zhang, Y. Adi, Y. Nam, Yu, Wa
 Y. Li, Y. He, Z. Rait, Z. DeVito, Z. Rosnbrick, Z. Wen, Z. Yang, Z. Zhao, and Z. Ma, “The llama 3 herd of
 models,” 2024. [Online]. Available: https://arxiv.org/abs/2407.21783
 
-8. Y. Bai, X. Lv, J. Zhang, H. Lyu, J. Tang, Z. Huang, Z. Du, X. Liu, A. Zeng, L. Hou, Y. Dong, J. Tang, and
+7. Y. Bai, X. Lv, J. Zhang, H. Lyu, J. Tang, Z. Huang, Z. Du, X. Liu, A. Zeng, L. Hou, Y. Dong, J. Tang, and
 J. Li, “LongBench: A bilingual, multitask benchmark for long context understanding,” in Proceedings of the
 62nd Annual Meeting of the Association for Computational Linguistics (Volume 1: Long Papers), L.-W. Ku,
 A. Martins, and V. Srikumar, Eds. Bangkok, Thailand: Association for Computational Linguistics, Aug. 2024,
 pp. 3119–3137. [Online]. Available: https://aclanthology.org/2024.acl-long.172/
 
-9. DeepSeek-AI, “Deepseek-r1: Incentivizing reasoning capability in llms via reinforcement learning,” 2025. [Online].
+8. DeepSeek-AI, “Deepseek-r1: Incentivizing reasoning capability in llms via reinforcement learning,” 2025. [Online].
 Available: https://arxiv.org/abs/2501.12948
 
-10. Joao Gante, “Assisted generation: a new direction toward low-latency text generation,” 2023. [Online].
+9. Joao Gante, “Assisted generation: a new direction toward low-latency text generation,” 2023. [Online].
 Available: https://huggingface.co/blog/assisted-generation
 
-11. X. Miao, G. Oliaro, Z. Zhang, X. Cheng, Z. Wang, R. Y. Y. Wong, Z. Chen, D. Arfeen, R. Abhyankar, and
+10. X. Miao, G. Oliaro, Z. Zhang, X. Cheng, Z. Wang, R. Y. Y. Wong, Z. Chen, D. Arfeen, R. Abhyankar, and
 Z. Jia, “Specinfer: Accelerating generative llm serving with speculative inference and token tree verification,”
 2023.
 
-12. S. Yang, S. Huang, X. Dai, and J. Chen, “Multi-candidate speculative decoding,” 2024. [Online]. Available:
+11. S. Yang, S. Huang, X. Dai, and J. Chen, “Multi-candidate speculative decoding,” 2024. [Online]. Available:
 https://arxiv.org/abs/2401.06706
 
 '''
+
+print("\n\n*******************************\nFinished Running SpecDec_LB.py\n\n")
