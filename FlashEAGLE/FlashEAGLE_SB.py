@@ -1,34 +1,17 @@
+print("\n\n*******************************\nStarting FlashEAGLE_SB.py\n\n")
+
 import pandas as pd    
 import time
 import numpy as np
 import torch
 from eagle.model.ea_model import EaModel
 from fastchat.model import get_conversation_template
-from datasets import load_dataset
 
 # Getting Spec-Bench Questions
 # Below line from: https://stackoverflow.com/questions/50475635/loading-jsonl-file-as-json-objects
 jsonObj = pd.read_json(path_or_buf='../question.jsonl', lines=True)
 sb_prompts = [jsonObj.at[i, 'turns'] for i in range(len(jsonObj))]
 
-# Getting LongBench-E Questions
-lb_prompts = []
-
-# Reference for Below Code Block: https://huggingface.co/datasets/THUDM/LongBench 
-datasets = ["qasper", "multifieldqa_en", "hotpotqa", "2wikimqa", "gov_report", "multi_news", "trec", \
-            "triviaqa", "samsum", "passage_count", "passage_retrieval_en", "lcc", "repobench-p"]
-for dataset in datasets:
-    data = load_dataset('THUDM/LongBench', f"{dataset}_e", split='test')
-    counter = 0
-
-    for i in range(len(data)):
-        if counter == 30:
-            break
-
-        if data[i]["language"] != "zh":
-            prompt = data[i]["context"] + "\n\n" + data[i]["input"]
-            lb_prompts.append(prompt)
-            counter += 1
 
 base_model_paths = ["lmsys/vicuna-13b-v1.3",
                     "deepseek-ai/DeepSeek-R1-Distill-Llama-8B",
@@ -66,6 +49,8 @@ def model_init(model_index):
 # Preparing for assessment
 models_to_test = [2, 3]
 test_runs = 3
+max_new_tokens = 128
+temp = 0.0
 
 # Spec-Bench Assessment Loop
 for model_index in models_to_test:
@@ -93,7 +78,7 @@ for model_index in models_to_test:
                 start = time.perf_counter_ns()
 
                 # Below Code Line From: https://github.com/SafeAILab/EAGLE
-                output_ids = model.eagenerate(input_ids, temperature=0.0, max_new_tokens=256, log=True)
+                output_ids = model.eagenerate(input_ids, temperature=temp, max_new_tokens=max_new_tokens, log=True)
 
                 finish = time.perf_counter_ns()
                 elapsed = finish - start
@@ -110,56 +95,6 @@ for model_index in models_to_test:
 
     # Print Spec-Bench Results
     print(f"Spec-Bench Results for {base_model_paths[model_index]}:")
-    print("Mean Wall Time (ns): ", np.mean(wall_times))
-    print("Mean Tokens Generated/s: ", np.mean(token_rates))
-    print("Average Acceptance Length: ", np.mean(avg_accept_lens))
-
-# LongBench-E Assessment Loop
-for model_index in models_to_test:
-    wall_times = []
-    token_rates = []
-    avg_accept_lens = []
-    model = model_init(model_index)
-    for test_run in range(test_runs):
-        run = 1
-        for i in range(len(lb_prompts)):
-            print("Test Run: ", test_run)
-            print("LB Question: ", run)
-            run += 1
-
-            # Below Code Block From: https://github.com/SafeAILab/EAGLE
-            your_message = lb_prompts[i]
-            if len(your_message) == 1: 
-                your_message = your_message[0]
-            else: 
-                raise("Message Length Above 1")
-            conv = get_conversation_template(template_getter(model_index))
-            conv.append_message(conv.roles[0], your_message)
-            conv.append_message(conv.roles[1], None)
-            prompt = conv.get_prompt()
-            input_ids = model.tokenizer([prompt]).input_ids
-            input_ids = torch.as_tensor(input_ids).cuda()
-
-            start = time.perf_counter_ns()
-
-            # Below Code Line From: https://github.com/SafeAILab/EAGLE
-            output_ids = model.eagenerate(input_ids, temperature=0.0, max_new_tokens=256, log=True)
-
-            finish = time.perf_counter_ns()
-            elapsed = finish - start
-            wall_times.append(elapsed)
-
-            new_tokens = int(output_ids[1])
-            tokens_per_second = new_tokens / (elapsed * pow(10, -9))
-            token_rates.append(tokens_per_second)
-
-            # Reference for below code block: https://github.com/SafeAILab/EAGLE/issues/153
-            steps = int(output_ids[2])
-            avg_accept_len = new_tokens / steps
-            avg_accept_lens.append(avg_accept_len)
-
-    # Print LongBench-E Results
-    print(f"LongBench-E Results for {base_model_paths[model_index]}:")
     print("Mean Wall Time (ns): ", np.mean(wall_times))
     print("Mean Tokens Generated/s: ", np.mean(token_rates))
     print("Average Acceptance Length: ", np.mean(avg_accept_lens))
@@ -274,3 +209,5 @@ pp. 3119–3137. [Online]. Available: https://aclanthology.org/2024.acl-long.172
 Available: https://arxiv.org/abs/2501.12948
 
 '''
+
+print("\n\n*******************************\nFinished Running FlashEAGLE_SB.py\n\n")

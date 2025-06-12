@@ -1,15 +1,11 @@
-import pandas as pd    
+print("\n\n*******************************\nStarting FlashEAGLE_LB.py\n\n")
+
 import time
 import numpy as np
 import torch
 from eagle.model.ea_model import EaModel
 from fastchat.model import get_conversation_template
 from datasets import load_dataset
-
-# Getting Spec-Bench Questions
-# Below line from: https://stackoverflow.com/questions/50475635/loading-jsonl-file-as-json-objects
-jsonObj = pd.read_json(path_or_buf='../question.jsonl', lines=True)
-sb_prompts = [jsonObj.at[i, 'turns'] for i in range(len(jsonObj))]
 
 # Getting LongBench-E Questions
 lb_prompts = []
@@ -60,7 +56,9 @@ def model_init(model_index):
         torch_dtype=torch.float16,
         low_cpu_mem_usage=True,
         device_map="auto",
-        total_token=-1
+        total_token=-1,
+        attn_implementation="flash_attention_2",
+        trust_remote_code=True
     )
 
     # Below Code Line From: https://github.com/SafeAILab/EAGLE
@@ -68,55 +66,10 @@ def model_init(model_index):
     return model
 
 # Preparing for assessment
-models_to_test = [0, 1, 2, 3]
+models_to_test = [2, 3]
 test_runs = 3
-
-# Spec-Bench Assessment Loop
-for model_index in models_to_test:
-    wall_times = []
-    token_rates = []
-    avg_accept_lens = []
-    model = model_init(model_index)
-    for test_run in range(test_runs):
-        run = 1
-        for i in range(len(sb_prompts)):
-            print("Test Run: ", test_run)
-            print("SB Question: ", run)
-            run += 1
-
-            for question in sb_prompts[i]:
-                # Below Code Block From: https://github.com/SafeAILab/EAGLE
-                your_message = question
-                conv = get_conversation_template(template_getter(model_index))
-                conv.append_message(conv.roles[0], your_message)
-                conv.append_message(conv.roles[1], None)
-                prompt = conv.get_prompt()
-                input_ids = model.tokenizer([prompt]).input_ids
-                input_ids = torch.as_tensor(input_ids).cuda()
-
-                start = time.perf_counter_ns()
-
-                # Below Code Line From: https://github.com/SafeAILab/EAGLE
-                output_ids = model.eagenerate(input_ids, temperature=0.0, max_new_tokens=256, log=True)
-
-                finish = time.perf_counter_ns()
-                elapsed = finish - start
-                wall_times.append(elapsed)
-
-                new_tokens = int(output_ids[1])
-                tokens_per_second = new_tokens / (elapsed * pow(10, -9))
-                token_rates.append(tokens_per_second)
-
-                # Reference for below code block: https://github.com/SafeAILab/EAGLE/issues/153
-                steps = int(output_ids[2])
-                avg_accept_len = new_tokens / steps
-                avg_accept_lens.append(avg_accept_len)
-
-    # Print Spec-Bench Results
-    print(f"Spec-Bench Results for {base_model_paths[model_index]}:")
-    print("Mean Wall Time (ns): ", np.mean(wall_times))
-    print("Mean Tokens Generated/s: ", np.mean(token_rates))
-    print("Average Acceptance Length: ", np.mean(avg_accept_lens))
+max_new_tokens = 128
+temp = 0.0
 
 # LongBench-E Assessment Loop
 for model_index in models_to_test:
@@ -147,7 +100,7 @@ for model_index in models_to_test:
             start = time.perf_counter_ns()
 
             # Below Code Line From: https://github.com/SafeAILab/EAGLE
-            output_ids = model.eagenerate(input_ids, temperature=0.0, max_new_tokens=256, log=True)
+            output_ids = model.eagenerate(input_ids, temperature=temp, max_new_tokens=max_new_tokens, log=True)
 
             finish = time.perf_counter_ns()
             elapsed = finish - start
@@ -187,21 +140,28 @@ of Machine Learning Research, R. Salakhutdinov, Z. Kolter, K. Heller, A. Weller,
 and F. Berkenkamp, Eds., vol. 235. PMLR, 21–27 Jul 2024, pp. 28 935–28 948. [Online]. Available:
 https://proceedings.mlr.press/v235/li24bt.html
 
-4. L. Zheng, W.-L. Chiang, Y. Sheng, S. Zhuang, Z. Wu, Y. Zhuang, Z. Lin, Z. Li, D. Li, E. P. Xing, H. Zhang,
+4. T. Dao, “FlashAttention-2: Faster attention with better parallelism and work partitioning,” in International
+Conference on Learning Representations (ICLR), 2024.
+
+5. L. Zheng, W.-L. Chiang, Y. Sheng, S. Zhuang, Z. Wu, Y. Zhuang, Z. Lin, Z. Li, D. Li, E. P. Xing, H. Zhang,
 J. E. Gonzalez, and I. Stoica, “Judging llm-as-a-judge with mt-bench and chatbot arena,” in Proceedings of
 the 37th International Conference on Neural Information Processing Systems, ser. NIPS ’23. Red Hook, NY,
 USA: Curran Associates Inc., 2023.
 
-5. Y. Li, F. Wei, C. Zhang, and H. Zhang, “EAGLE-2: Faster inference of language models with dynamic
+6. T. Dao, D. Y. Fu, S. Ermon, A. Rudra, and C. Ré, “Flashattention: fast and memory-efficient exact attention
+with io-awareness,” in Proceedings of the 36th International Conference on Neural Information Processing
+Systems, ser. NIPS ’22. Red Hook, NY, USA: Curran Associates Inc., 2022.
+
+7. Y. Li, F. Wei, C. Zhang, and H. Zhang, “EAGLE-2: Faster inference of language models with dynamic
 draft trees,” in Proceedings of the 2024 Conference on Empirical Methods in Natural Language Processing,
 Y. Al-Onaizan, M. Bansal, and Y.-N. Chen, Eds. Miami, Florida, USA: Association for Computational Linguistics,
 Nov. 2024, pp. 7421–7432. [Online]. Available: https://aclanthology.org/2024.emnlp-main.422/
 
-6. W.-L. Chiang, Z. Li, Z. Lin, Y. Sheng, Z. Wu, H. Zhang, L. Zheng, S. Zhuang, Y. Zhuang, J. E. Gonzalez,
+8. W.-L. Chiang, Z. Li, Z. Lin, Y. Sheng, Z. Wu, H. Zhang, L. Zheng, S. Zhuang, Y. Zhuang, J. E. Gonzalez,
 I. Stoica, and E. P. Xing, “Vicuna: An open-source chatbot impressing gpt-4 with 90%* chatgpt quality,” March
 2023. [Online]. Available: https://lmsys.org/blog/2023-03-30-vicuna/
 
-7. A. Grattafiori, A. Dubey, A. Jauhri, A. Pandey, A. Kadian, A. Al-Dahle, A. Letman, A. Mathur, A. Schelten,
+9. A. Grattafiori, A. Dubey, A. Jauhri, A. Pandey, A. Kadian, A. Al-Dahle, A. Letman, A. Mathur, A. Schelten,
 A. Vaughan, A. Yang, A. Fan, A. Goyal, A. Hartshorn, A. Yang, A. Mitra, A. Sravankumar, A. Korenev,
 A. Hinsvark, A. Rao, A. Zhang, A. Rodriguez, A. Gregerson, A. Spataru, B. Roziere, B. Biron, B. Tang, B. Chern,
 C. Caucheteux, C. Nayak, C. Bi, C. Marra, C. McConnell, C. Keller, C. Touret, C. Wu, C. Wong, C. C. Ferrer,
@@ -261,13 +221,15 @@ Y. Chen, Y. Hu, Y. Jia, Y. Qi, Y. Li, Y. Zhang, Y. Zhang, Y. Adi, Y. Nam, Yu, Wa
 Y. Li, Y. He, Z. Rait, Z. DeVito, Z. Rosnbrick, Z. Wen, Z. Yang, Z. Zhao, and Z. Ma, “The llama 3 herd of
 models,” 2024. [Online]. Available: https://arxiv.org/abs/2407.21783
 
-8. Y. Bai, X. Lv, J. Zhang, H. Lyu, J. Tang, Z. Huang, Z. Du, X. Liu, A. Zeng, L. Hou, Y. Dong, J. Tang, and
+10. Y. Bai, X. Lv, J. Zhang, H. Lyu, J. Tang, Z. Huang, Z. Du, X. Liu, A. Zeng, L. Hou, Y. Dong, J. Tang, and
 J. Li, “LongBench: A bilingual, multitask benchmark for long context understanding,” in Proceedings of the
 62nd Annual Meeting of the Association for Computational Linguistics (Volume 1: Long Papers), L.-W. Ku,
 A. Martins, and V. Srikumar, Eds. Bangkok, Thailand: Association for Computational Linguistics, Aug. 2024,
 pp. 3119–3137. [Online]. Available: https://aclanthology.org/2024.acl-long.172/
 
-9. DeepSeek-AI, “Deepseek-r1: Incentivizing reasoning capability in llms via reinforcement learning,” 2025. [Online].
+11. DeepSeek-AI, “Deepseek-r1: Incentivizing reasoning capability in llms via reinforcement learning,” 2025. [Online].
 Available: https://arxiv.org/abs/2501.12948
 
 '''
+
+print("\n\n*******************************\nFinished Running FlashEAGLE_LB.py\n\n")
