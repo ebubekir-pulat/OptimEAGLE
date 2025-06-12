@@ -1,4 +1,5 @@
-from transformers import AutoTokenizer,  AutoModelForCausalLM
+print("\n\n*******************************\nStarting LIO.py\n\n")
+
 from eagle.model.ea_model import EaModel
 from fastchat.model import get_conversation_template
 import torch
@@ -12,18 +13,6 @@ EAGLE_model_paths = ["yuhuili/EAGLE3-Vicuna1.3-13B",
                      "yuhuili/EAGLE3-DeepSeek-R1-Distill-LLaMA-8B",
                      "yuhuili/EAGLE3-LLaMA3.1-Instruct-8B",
                      "yuhuili/EAGLE3-LLaMA3.3-Instruct-70B"]
-
-
-# Preparing for LLM Instructed Optimisation (LIO)
-def LIO_init(model_index):
-    LLM_path = base_model_paths[model_index]
-    # Below Code Block From: https://huggingface.co/learn/llm-course/chapter2/6?fw=pt, https://huggingface.co/docs/hub/transformers
-    LLM_tokenizer = AutoTokenizer.from_pretrained(LLM_path)
-    LLM = AutoModelForCausalLM.from_pretrained(LLM_path)
-    # Below Code Line From: https://github.com/SafeAILab/EAGLE
-    LLM.eval()
-
-    return LLM, LLM_tokenizer
 
 
 # Preparing for LLM Instructed Optimisation (LIO) with EAGLE-3 Model
@@ -44,7 +33,7 @@ def EAGLE_LIO_init(model_index):
 
 
 def suggestionsProcessor(LLM_suggestions):
-    settings = ["Tempearture", "Depth", "Top_k", "Threshold"]
+    settings = ['"Tempearture":', '"Depth":', '"Top_k":', '"Top_k":', '"Threshold":', '"Top_p":', '"Total_token":']
     setting_values = []
 
     for setting in settings:
@@ -56,28 +45,14 @@ def suggestionsProcessor(LLM_suggestions):
         index += 1
 
         setting_value = ""
-        while LLM_suggestions[index] != " ":
+        while LLM_suggestions[index] != " " and LLM_suggestions[index] != "\n":
             setting_value += LLM_suggestions[index]
+            index += 1
 
         setting_values.append(float(setting_value))
 
     return setting_values
 
-
-# LLM Instructed Optimisation (LIO)
-def LIO(prompt_type, LLM, LLM_tokenizer):
-    LIO_prompt = f"For {prompt_type} tasks, provide the optimal settings for temperature, depth, top_k and threshold " \
-                "for a draft model in an EAGLE-3 based Speculative Decoding method. The draft model attempts to emulate" \
-                " the target model (the LLM used), to quickly generate draft tokens that the target model will verify. " \
-                "EAGLE-3 uses self-drafting, and a dynamic draft tree, and prioritises speed of token generation. " \
-                "Print the settings as: temperature: *value*, depth: *value* and so on, in an easily processed format."
-
-    # Below Code Block From: https://huggingface.co/docs/transformers/main/en/model_doc/llama#transformers.LlamaForCausalLM, https://huggingface.co/docs/transformers/main/en/model_doc/llama#transformers.LlamaForCausalLM.forward.example
-    inputs = LLM_tokenizer(LIO_prompt, return_tensors="pt")
-    generate_ids = LLM.generate(inputs.input_ids, max_new_tokens=1024)
-    LIO_suggestions_raw = LLM_tokenizer.batch_decode(generate_ids, skip_special_tokens=True, clean_up_tokenization_spaces=False)[0]
-    LIO_suggestions = suggestionsProcessor(LIO_suggestions_raw)
-    return LIO_suggestions
 
 def template_getter(model_index):
     if model_index == 0:
@@ -105,7 +80,8 @@ def EAGLE_LIO(prompt_type, model):
     "to ultimately produce the next token. For the next token, a sequence of g’s analogous to the current token sequence is " \
     "prepared to repeat the process, however, preferably the feature g of the recently sampled token would also form part of " \
     "this g sequence, but due to its unavailability, it is substituted by the previously formed a. " \
-    "Provide the optimal settings for temperature, depth, top_k, threshold and  for EAGLE-3, in JSON format, " \
+    "Provide the optimal settings for temperature, depth, top_p, top_k (for the generate function), top_k (for the model), " \
+    "threshold and total_token for EAGLE-3, in JSON format, " \
     f"for {prompt_type} tasks."
 
     # Below Code Block From: https://github.com/SafeAILab/EAGLE
@@ -149,30 +125,13 @@ EAGLE_LIO_suggestions_set = {}
 
 for i in range(len(categories)):
     # Getting EAGLE LIO Suggestions
-    LIO_suggestions = LIO(categories[i], EAGLE_model)
+    LIO_suggestions = EAGLE_LIO(categories[i], EAGLE_model)
     EAGLE_LIO_suggestions_set[categories[i]] = LIO_suggestions
     print(LIO_suggestions)
 
 for category in EAGLE_LIO_suggestions_set:
     print(category, ": ", EAGLE_LIO_suggestions_set[category])
 
-'''
-
-# Getting LIO Suggestions without EAGLE3 Model
-LLM, LLM_tokenizer = LIO_init(model_index)
-LIO_suggestions_set = {}
-
-for i in range(len(categories)):
-    # Getting LIO Suggestions
-    LIO_suggestions = LIO(categories[i], LLM, LLM_tokenizer)
-    LIO_suggestions_set[categories[i]] = LIO_suggestions
-
-    print(LIO_suggestions)
-
-for category in LIO_suggestions_set:
-    print(category, ": ", LIO_suggestions_set[category])
-
-'''
 
 '''
 References
@@ -202,7 +161,15 @@ draft trees,” in Proceedings of the 2024 Conference on Empirical Methods in Na
 Y. Al-Onaizan, M. Bansal, and Y.-N. Chen, Eds. Miami, Florida, USA: Association for Computational Linguistics,
 Nov. 2024, pp. 7421–7432. [Online]. Available: https://aclanthology.org/2024.emnlp-main.422/
 
-6. DeepSeek-AI, “Deepseek-r1: Incentivizing reasoning capability in llms via reinforcement learning,” 2025. [Online].
+6. Y. Bai, X. Lv, J. Zhang, H. Lyu, J. Tang, Z. Huang, Z. Du, X. Liu, A. Zeng, L. Hou, Y. Dong, J. Tang, and
+J. Li, “LongBench: A bilingual, multitask benchmark for long context understanding,” in Proceedings of the
+62nd Annual Meeting of the Association for Computational Linguistics (Volume 1: Long Papers), L.-W. Ku,
+A. Martins, and V. Srikumar, Eds. Bangkok, Thailand: Association for Computational Linguistics, Aug. 2024,
+pp. 3119–3137. [Online]. Available: https://aclanthology.org/2024.acl-long.172/
+
+7. DeepSeek-AI, “Deepseek-r1: Incentivizing reasoning capability in llms via reinforcement learning,” 2025. [Online].
 Available: https://arxiv.org/abs/2501.12948
 
 '''
+
+print("\n\n*******************************\nFinished Running LIO.py\n\n")
