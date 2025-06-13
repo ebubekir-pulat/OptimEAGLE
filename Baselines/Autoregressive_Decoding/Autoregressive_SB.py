@@ -1,69 +1,80 @@
-import pandas as pd
-import numpy as np
-from transformers import AutoTokenizer,  AutoModelForCausalLM
+print("\n\n*******************************\nStarting Autoregressive_SB.py\n\n")
+
+import pandas as pd    
 import time
-from fastchat.model import get_conversation_template    
+import numpy as np
+from transformers import AutoModelForCausalLM, AutoTokenizer
+from fastchat.model import get_conversation_template
 
-# Below line from: https://stackoverflow.com/questions/50475635/loading-jsonl-file-as-json-objects
-jsonObj = pd.read_json(path_or_buf='../../Data/question.jsonl', lines=True)
-prompts = [jsonObj.at[i, 'turns'] for i in range(len(jsonObj))]
+# Getting Spec-Bench Questions
+# Reference for below line: https://stackoverflow.com/questions/50475635/loading-jsonl-file-as-json-objects
+jsonObj = pd.read_json(path_or_buf='question.jsonl', lines=True)
+sb_prompts = [jsonObj.at[i, 'turns'] for i in range(len(jsonObj))]
 
-LLMs = ["lmsys/vicuna-7b-v1.3",
-        "lmsys/vicuna-13b-v1.3",
-        "lmsys/vicuna-33b-v1.3",
-        "deepseek-ai/DeepSeek-R1-Distill-Llama-8B",
-        "meta-llama/Llama-3.3-70B-Instruct"]
+model_paths = ["lmsys/vicuna-13b-v1.3",
+               "deepseek-ai/DeepSeek-R1-Distill-Llama-8B",
+               "meta-llama/Llama-3.1-8B-Instruct",
+               "meta-llama/Llama-3.3-70B-Instruct"]
 
-# Below Code Block From: https://huggingface.co/learn/llm-course/chapter2/6?fw=pt, https://huggingface.co/docs/hub/transformers
-checkpoint = LLMs[3]
-tokenizer = AutoTokenizer.from_pretrained(checkpoint)
-model = AutoModelForCausalLM.from_pretrained(checkpoint)
-# Below Code Line From: https://github.com/SafeAILab/EAGLE
-model.eval()
+def template_getter(model_index):
+    if model_index == 0:
+        return "vicuna"
+    else:
+        return model_paths[model_index]
 
-template = ""
-if "vicuna" in checkpoint:
-    template = "vicuna"
-else:
-    template = "llama-3-chat"
+def model_init(model_index):
+    # Below Code Block From: https://huggingface.co/learn/llm-course/chapter2/6?fw=pt, https://huggingface.co/docs/hub/transformers
+    checkpoint = model_paths[model_index]
+    tokenizer = AutoTokenizer.from_pretrained(checkpoint)
+    model = AutoModelForCausalLM.from_pretrained(checkpoint)
+    # Below Code Line From: https://github.com/SafeAILab/EAGLE
+    model.eval()
+    return model, tokenizer
 
-wall_times = []
-token_rates = []
+# Preparing for assessment
+models_to_test = [0, 1, 2, 3]
+test_runs = 3
+max_new_tokens = 128
 
-for _ in range(3):
-    for i in range(160, 480):
-        # Below Code Block From: https://github.com/SafeAILab/EAGLE
-        # Code Block Starts Here
-        your_message = prompts[i]
-        if len(your_message) == 1: 
-            your_message = your_message[0]
-        else: 
-            raise("Message Length Above 1")
-        conv = get_conversation_template(template)
-        conv.append_message(conv.roles[0], your_message)
-        conv.append_message(conv.roles[1], None)
-        prompt = conv.get_prompt()
-        # Code Blocks Ends Here
+print("\nEvaluation Settings Chosen:")
+print("Test Runs: ", test_runs)
+print("Max New Tokens: ", max_new_tokens)
 
-        # Below Code Block From: https://huggingface.co/docs/transformers/main/en/model_doc/llama#transformers.LlamaForCausalLM, https://huggingface.co/docs/transformers/main/en/model_doc/llama#transformers.LlamaForCausalLM.forward.example
-        inputs = tokenizer(prompt, return_tensors="pt")
-        start = time.perf_counter_ns()
-        generate_ids = model.generate(inputs.input_ids, max_new_tokens=512)
-        #print("\n\nOUTPUT: ", tokenizer.batch_decode(generate_ids, skip_special_tokens=True, clean_up_tokenization_spaces=False)[0])
+# Spec-Bench Assessment Loop
+for model_index in models_to_test:
+    wall_times = []
+    model, tokenizer = model_init(model_index)
+    for test_run in range(test_runs):
+        run = 1
+        for i in range(len(sb_prompts)):
+            print("Test Run: ", test_run)
+            print("SB Question: ", run)
+            run += 1
 
-        finish = time.perf_counter_ns()
-        elapsed = finish - start
-        wall_times.append(elapsed)
-        #print("\nWall Clock Time (ns): ", elapsed)
+            for question in sb_prompts[i]:
+                # Below Code Block From: https://github.com/SafeAILab/EAGLE
+                your_message = question
+                conv = get_conversation_template(template_getter(model_index))
+                conv.append_message(conv.roles[0], your_message)
+                conv.append_message(conv.roles[1], None)
+                prompt = conv.get_prompt()
+                
+                # Below Code Line From: https://huggingface.co/docs/transformers/main/en/model_doc/llama#transformers.LlamaForCausalLM, https://huggingface.co/docs/transformers/main/en/model_doc/llama#transformers.LlamaForCausalLM.forward.example
+                inputs = tokenizer(prompt, return_tensors="pt")
 
-        num_tokens = len(generate_ids)
-        tokens_per_second = num_tokens / (elapsed * pow(10, -9))
-        token_rates.append(tokens_per_second)
-        #print("Tokens Per Second: ", tokens_per_second)
+                start = time.perf_counter_ns()
 
-print("Results:")
-print("Mean Wall Time (ns): ", np.mean(wall_times))
-print("Mean Tokens/s: ", np.mean(token_rates))
+                # Below Code Line From: https://huggingface.co/docs/transformers/main/en/model_doc/llama#transformers.LlamaForCausalLM, https://huggingface.co/docs/transformers/main/en/model_doc/llama#transformers.LlamaForCausalLM.forward.example
+                generate_ids = model.generate(inputs.input_ids, max_new_tokens=max_new_tokens)                
+
+                finish = time.perf_counter_ns()
+                elapsed = finish - start
+                wall_times.append(elapsed)
+
+    # Print Spec-Bench Results
+    print(f"Spec-Bench Results for {model_paths[model_index]}:")
+    print("Mean Wall Time (ns): ", np.mean(wall_times))
+        
 
 '''
 References
@@ -157,13 +168,9 @@ Y. Chen, Y. Hu, Y. Jia, Y. Qi, Y. Li, Y. Zhang, Y. Zhang, Y. Adi, Y. Nam, Yu, Wa
 Y. Li, Y. He, Z. Rait, Z. DeVito, Z. Rosnbrick, Z. Wen, Z. Yang, Z. Zhao, and Z. Ma, “The llama 3 herd of
 models,” 2024. [Online]. Available: https://arxiv.org/abs/2407.21783
 
-8. Y. Bai, X. Lv, J. Zhang, H. Lyu, J. Tang, Z. Huang, Z. Du, X. Liu, A. Zeng, L. Hou, Y. Dong, J. Tang, and
-J. Li, “LongBench: A bilingual, multitask benchmark for long context understanding,” in Proceedings of the
-62nd Annual Meeting of the Association for Computational Linguistics (Volume 1: Long Papers), L.-W. Ku,
-A. Martins, and V. Srikumar, Eds. Bangkok, Thailand: Association for Computational Linguistics, Aug. 2024,
-pp. 3119–3137. [Online]. Available: https://aclanthology.org/2024.acl-long.172/
-
-9. DeepSeek-AI, “Deepseek-r1: Incentivizing reasoning capability in llms via reinforcement learning,” 2025. [Online].
+8. DeepSeek-AI, “Deepseek-r1: Incentivizing reasoning capability in llms via reinforcement learning,” 2025. [Online].
 Available: https://arxiv.org/abs/2501.12948
 
 '''
+
+print("\n\n*******************************\nFinished Running Autoregressive_SB.py\n\n")
