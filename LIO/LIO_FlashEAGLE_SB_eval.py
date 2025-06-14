@@ -29,10 +29,10 @@ def template_getter(model_index):
     else:
         return base_model_paths[model_index]
 
-total_token = 1
-depth = 1
-top_k_model = 1
-threshold = 1
+total_token = 1000
+depth = 20
+top_k_model = 50
+threshold = 0.5
 
 # Optimal Settings Suggested By DeepSeek-R1-Distill-Llama-8B
 # print("Optimal Settings Suggested By DeepSeek-R1-Distill-Llama-8B")
@@ -65,19 +65,19 @@ models_to_test = [0, 1, 2, 3]
 test_runs = 3
 max_new_tokens = 128
 
-LIO_settings = {"writing": [0, 0, 0],
-                "roleplay": [0, 0, 0],
-                "reasoning": [0, 0, 0],
-                "math": [0, 0, 0],
-                "coding": [0, 0, 0],
-                "extraction": [0, 0, 0],
-                "stem": [0, 0, 0],
-                "humanities": [0, 0, 0],
-                "translation": [0, 0, 0],
-                "summarization": [0, 0, 0],
-                "qa": [0, 0, 0],
-                "math_reasoning": [0, 0, 0],
-                "rag": [0, 0, 0]}
+LIO_settings = {"writing": [0.75, 0.85, 10],
+                "roleplay": [0.7, 0.9, 5],
+                "reasoning": [0.7, 0.9, 5],
+                "math": [0.7, 0.9, 5],
+                "coding": [0.7, 0.9, 5.2], # used mean of given top ks
+                "extraction": [0.7, 5, 5.2], # used mean of given top ks
+                "stem": [0.7, 0.9, 2],
+                "humanities": [0.7, 0.9, 5],
+                "translation": [0.7, 0.9, 5],
+                "summarization": [0.7, 5, 5.2], # used mean of given top ks
+                "qa": [0.7, 0.9, 5],
+                "math_reasoning": [0.7, 0.9, 5],
+                "rag": [0.7, 0.5, 5]}
 
 print("\nEvaluation Settings Chosen:")
 print("Test Runs: ", test_runs)
