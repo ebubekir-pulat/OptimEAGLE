@@ -61,8 +61,8 @@ def template_getter(model_index):
         return base_model_paths[model_index]
     
 
-# LLM Instructed Optimisation (LIO) with EAGLE-3 Models
-def EAGLE_LIO(prompt_type, model):
+# LLM Instructed Optimisation (LIO) with EAGLE-3 Models for model
+def EAGLE_LIO_model(model):
     prompt = "EAGLE-3 is a Speculative Decoding method, where the draft model attempts to emulate the target model (the LLM used), " \
     "to quickly generate draft tokens with high accuracy, that the target model will verify. EAGLE-3 uses self-drafting and a dynamic draft tree. Here " \
     "is some more background information: " \
@@ -80,9 +80,47 @@ def EAGLE_LIO(prompt_type, model):
     "to ultimately produce the next token. For the next token, a sequence of g’s analogous to the current token sequence is " \
     "prepared to repeat the process, however, preferably the feature g of the recently sampled token would also form part of " \
     "this g sequence, but due to its unavailability, it is substituted by the previously formed a. " \
-    "Provide the optimal settings for temperature, depth, top_p, top_k (for the generate function), top_k (for the model), " \
-    "threshold and total_token for EAGLE-3, in JSON format, " \
-    f"for {prompt_type} tasks."
+    "Provide the optimal settings for depth, top_k, top_k, threshold and total token for EAGLE-3, in JSON format, " \
+    "for writing, roleplay, reasoning, math, coding, extraction, stem, humanities, translation, summarization, " \
+    "qa, math_reasoning and rag tasks.\n" \
+    "Note: Depth = maximum draft length. \n" \
+    "Top_k = maximum number of tokens drafted in each layer. \n" \
+    "Total_token = number of draft tokens."
+
+    # Below Code Block From: https://github.com/SafeAILab/EAGLE
+    conv = get_conversation_template(template_getter(model_index))
+    conv.append_message(conv.roles[0], prompt)
+    conv.append_message(conv.roles[1], None)
+    LIO_prompt = conv.get_prompt()
+    input_ids = model.tokenizer([LIO_prompt]).input_ids
+    input_ids = torch.as_tensor(input_ids).cuda()
+    output_ids = model.eagenerate(input_ids, temperature=0.0, max_new_tokens=2048)
+    LIO_suggestions_raw = model.tokenizer.decode(output_ids[0])
+    LIO_suggestions = suggestionsProcessor(LIO_suggestions_raw)
+    return LIO_suggestions
+
+# LLM Instructed Optimisation (LIO) with EAGLE-3 Models for eagenerate
+def EAGLE_LIO_eagenerate(prompt_type, model):
+    prompt = "EAGLE-3 is a Speculative Decoding method, where the draft model attempts to emulate the target model (the LLM used), " \
+    "to quickly generate draft tokens with high accuracy, that the target model will verify. EAGLE-3 uses self-drafting and a dynamic draft tree. Here " \
+    "is some more background information: " \
+    "To enable EAGLE’s effective utilisation of expanded training, EAGLE-3 abandons feature prediction and instead goes straight to " \
+    "token prediction. Further, EAGLE-3 also incorporates the dynamic draft tree concept introduced in EAGLE-2. " \
+    "EAGLE-3 enjoys a strong correlation between training data size, and resultant speed up as well as the mean number of " \
+    "accepted draft tokens per forward pass, whereas EAGLE did not.  Precisely, EAGLE-3 comprises of a training-time test " \
+    "method which involves token prediction without feature prediction, allowing EAGLE-3 to utilise low, middle and high " \
+    "features derived from the target model for token prediction, not being restricted to just top-layer features like EAGLE. " \
+    "The authors argue this wider range of feature access supports the prediction of token_t+1 as well as token_t+2. " \
+    "In action, EAGLE-3 extracts the low, middle and high-level features of the prior target model forward pass, then combine these " \
+    "features into a vector which is processed by a fully connected layer that outputs a new heterogeneous and comprehensive feature, g. " \
+    "A sequence of these special features is combined with the embedding of the last sampled token, and this is then processed " \
+    "by a fully connected layer, then by a decoder to construct a vector a, which is sent to the drafter's LM head, " \
+    "to ultimately produce the next token. For the next token, a sequence of g’s analogous to the current token sequence is " \
+    "prepared to repeat the process, however, preferably the feature g of the recently sampled token would also form part of " \
+    "this g sequence, but due to its unavailability, it is substituted by the previously formed a. " \
+    "Provide the optimal settings for temperature, top_p and top_k, for EAGLE-3's generate function, in JSON format, " \
+    f"for {prompt_type} tasks. \n" \
+    "Top_k = maximum number of tokens drafted in each layer."
 
     # Below Code Block From: https://github.com/SafeAILab/EAGLE
     conv = get_conversation_template(template_getter(model_index))

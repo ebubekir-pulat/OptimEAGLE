@@ -35,10 +35,14 @@ def model_init(model_index):
 models_to_test = [0, 1, 2, 3]
 test_runs = 3
 max_new_tokens = 128
+start_index = 240
+end_index = len(sb_prompts)
 
 print("\nEvaluation Settings Chosen:")
 print("Test Runs: ", test_runs)
 print("Max New Tokens: ", max_new_tokens)
+print("First Question Index: ", start_index)
+print("Last Question Index: ", end_index)
 
 # Spec-Bench Assessment Loop
 for model_index in models_to_test:
@@ -46,7 +50,7 @@ for model_index in models_to_test:
     model, tokenizer = model_init(model_index)
     for test_run in range(test_runs):
         run = 1
-        for i in range(len(sb_prompts)):
+        for i in range(start_index, end_index):
             print("Test Run: ", test_run)
             print("SB Question: ", run)
             run += 1
