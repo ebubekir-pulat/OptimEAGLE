@@ -67,12 +67,12 @@ LIO_settings = {"writing": [0.75, 0.85, 10],
                 "roleplay": [0.7, 0.9, 5],
                 "reasoning": [0.7, 0.9, 5],
                 "math": [0.7, 0.9, 5],
-                "coding": [0.7, 0.9, 5.2], # used mean of given top ks
-                "extraction": [0.7, 5, 5.2], # used mean of given top ks
+                "coding": [0.7, 0.9, 5], # used mean of given top ks, then rounded to nearest integer
+                "extraction": [0.7, 5, 5], # used mean of given top ks, then rounded to nearest integer
                 "stem": [0.7, 0.9, 2],
                 "humanities": [0.7, 0.9, 5],
                 "translation": [0.7, 0.9, 5],
-                "summarization": [0.7, 5, 5.2], # used mean of given top ks
+                "summarization": [0.7, 5, 5], # used mean of given top ks, then rounded to nearest integer
                 "qa": [0.7, 0.9, 5],
                 "math_reasoning": [0.7, 0.9, 5],
                 "rag": [0.7, 0.5, 5]}
