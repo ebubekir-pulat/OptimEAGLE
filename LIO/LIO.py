@@ -4,23 +4,16 @@ from eagle.model.ea_model import EaModel
 from fastchat.model import get_conversation_template
 import torch
 
-base_model_paths = ["lmsys/vicuna-13b-v1.3",
-                    "deepseek-ai/DeepSeek-R1-Distill-Llama-8B",
-                    "meta-llama/Llama-3.1-8B-Instruct",
-                    "meta-llama/Llama-3.3-70B-Instruct"]
+base_model_path = "deepseek-ai/DeepSeek-R1-Distill-Llama-8B"
 
-EAGLE_model_paths = ["yuhuili/EAGLE3-Vicuna1.3-13B",
-                     "yuhuili/EAGLE3-DeepSeek-R1-Distill-LLaMA-8B",
-                     "yuhuili/EAGLE3-LLaMA3.1-Instruct-8B",
-                     "yuhuili/EAGLE3-LLaMA3.3-Instruct-70B"]
-
+EAGLE_model_path = "yuhuili/EAGLE3-DeepSeek-R1-Distill-LLaMA-8B"
 
 # Preparing for LLM Instructed Optimisation (LIO) with EAGLE-3 Model
-def EAGLE_LIO_init(model_index):
+def EAGLE_LIO_init():
     # Below Code Block From: https://github.com/SafeAILab/EAGLE
     model = EaModel.from_pretrained(
-        base_model_path=base_model_paths[model_index],
-        ea_model_path=EAGLE_model_paths[model_index],
+        base_model_path=base_model_path,
+        ea_model_path=EAGLE_model_path,
         torch_dtype=torch.float16,
         low_cpu_mem_usage=True,
         device_map="auto",
@@ -54,14 +47,10 @@ def suggestionsProcessor(LLM_suggestions):
     return setting_values
 
 
-def template_getter(model_index):
-    if model_index == 0:
-        return "vicuna"
-    else:
-        return base_model_paths[model_index]
-    
+def template_getter():
+    return "vicuna"
 
-# LLM Instructed Optimisation (LIO) with EAGLE-3 Models for model
+# LLM Instructed Optimisation (LIO) with EAGLE-3 Model for model setup
 def EAGLE_LIO_model(model):
     prompt = "EAGLE-3 is a Speculative Decoding method, where the draft model attempts to emulate the target model (the LLM used), " \
     "to quickly generate draft tokens with high accuracy, that the target model will verify. EAGLE-3 uses self-drafting and a dynamic draft tree. Here " \
@@ -69,7 +58,7 @@ def EAGLE_LIO_model(model):
     "To enable EAGLE’s effective utilisation of expanded training, EAGLE-3 abandons feature prediction and instead goes straight to " \
     "token prediction. Further, EAGLE-3 also incorporates the dynamic draft tree concept introduced in EAGLE-2. " \
     "EAGLE-3 enjoys a strong correlation between training data size, and resultant speed up as well as the mean number of " \
-    "accepted draft tokens per forward pass, whereas EAGLE did not.  Precisely, EAGLE-3 comprises of a training-time test " \
+    "accepted draft tokens per forward pass, whereas EAGLE did not. Precisely, EAGLE-3 comprises of a training-time test " \
     "method which involves token prediction without feature prediction, allowing EAGLE-3 to utilise low, middle and high " \
     "features derived from the target model for token prediction, not being restricted to just top-layer features like EAGLE. " \
     "The authors argue this wider range of feature access supports the prediction of token_t+1 as well as token_t+2. " \
@@ -80,26 +69,26 @@ def EAGLE_LIO_model(model):
     "to ultimately produce the next token. For the next token, a sequence of g’s analogous to the current token sequence is " \
     "prepared to repeat the process, however, preferably the feature g of the recently sampled token would also form part of " \
     "this g sequence, but due to its unavailability, it is substituted by the previously formed a. " \
-    "Provide the optimal settings for depth, top_k, top_k, threshold and total token for EAGLE-3, in JSON format, " \
-    "for writing, roleplay, reasoning, math, coding, extraction, stem, humanities, translation, summarization, " \
-    "qa, math_reasoning and rag tasks.\n" \
+    "Provide one set of optimal settings for depth, top_k, threshold and total token for EAGLE-3, in JSON format, " \
+    "to generally handle writing, roleplay, reasoning, math, coding, extraction, stem, humanities, translation, summarization, " \
+    "qa, math_reasoning and rag tasks. Provide one set of settings to handle all tasks, not one for each task. " \
+    "Be very clear in your decision and be concise.\n" \
     "Note: Depth = maximum draft length. \n" \
     "Top_k = maximum number of tokens drafted in each layer. \n" \
     "Total_token = number of draft tokens."
 
     # Below Code Block From: https://github.com/SafeAILab/EAGLE
-    conv = get_conversation_template(template_getter(model_index))
+    conv = get_conversation_template(template_getter())
     conv.append_message(conv.roles[0], prompt)
     conv.append_message(conv.roles[1], None)
     LIO_prompt = conv.get_prompt()
     input_ids = model.tokenizer([LIO_prompt]).input_ids
     input_ids = torch.as_tensor(input_ids).cuda()
-    output_ids = model.eagenerate(input_ids, temperature=0.0, max_new_tokens=2048)
-    LIO_suggestions_raw = model.tokenizer.decode(output_ids[0])
-    LIO_suggestions = suggestionsProcessor(LIO_suggestions_raw)
-    return LIO_suggestions
+    output_ids = model.eagenerate(input_ids, temperature=0.0, max_new_tokens=1024)
+    LIO_suggestions = model.tokenizer.decode(output_ids[0])
+    print(LIO_suggestions)
 
-# LLM Instructed Optimisation (LIO) with EAGLE-3 Models for eagenerate
+# LLM Instructed Optimisation (LIO) with EAGLE-3 Model for eagenerate setup
 def EAGLE_LIO_eagenerate(prompt_type, model):
     prompt = "EAGLE-3 is a Speculative Decoding method, where the draft model attempts to emulate the target model (the LLM used), " \
     "to quickly generate draft tokens with high accuracy, that the target model will verify. EAGLE-3 uses self-drafting and a dynamic draft tree. Here " \
@@ -107,7 +96,7 @@ def EAGLE_LIO_eagenerate(prompt_type, model):
     "To enable EAGLE’s effective utilisation of expanded training, EAGLE-3 abandons feature prediction and instead goes straight to " \
     "token prediction. Further, EAGLE-3 also incorporates the dynamic draft tree concept introduced in EAGLE-2. " \
     "EAGLE-3 enjoys a strong correlation between training data size, and resultant speed up as well as the mean number of " \
-    "accepted draft tokens per forward pass, whereas EAGLE did not.  Precisely, EAGLE-3 comprises of a training-time test " \
+    "accepted draft tokens per forward pass, whereas EAGLE did not. Precisely, EAGLE-3 comprises of a training-time test " \
     "method which involves token prediction without feature prediction, allowing EAGLE-3 to utilise low, middle and high " \
     "features derived from the target model for token prediction, not being restricted to just top-layer features like EAGLE. " \
     "The authors argue this wider range of feature access supports the prediction of token_t+1 as well as token_t+2. " \
@@ -118,21 +107,20 @@ def EAGLE_LIO_eagenerate(prompt_type, model):
     "to ultimately produce the next token. For the next token, a sequence of g’s analogous to the current token sequence is " \
     "prepared to repeat the process, however, preferably the feature g of the recently sampled token would also form part of " \
     "this g sequence, but due to its unavailability, it is substituted by the previously formed a. " \
-    "Provide the optimal settings for temperature, top_p and top_k, for EAGLE-3's generate function, in JSON format, " \
-    f"for {prompt_type} tasks. \n" \
-    "Top_k = maximum number of tokens drafted in each layer."
+    "Provide one set of optimal settings for temperature, top_p and top_k for EAGLE-3's generate function, in JSON format, " \
+    f"for {prompt_type} tasks. Provide only one set of values. Provide a set of values no matter what and be concise.\n" \
+    "Note: Top_k = maximum number of tokens drafted in each layer."
 
     # Below Code Block From: https://github.com/SafeAILab/EAGLE
-    conv = get_conversation_template(template_getter(model_index))
+    conv = get_conversation_template(template_getter())
     conv.append_message(conv.roles[0], prompt)
     conv.append_message(conv.roles[1], None)
     LIO_prompt = conv.get_prompt()
     input_ids = model.tokenizer([LIO_prompt]).input_ids
     input_ids = torch.as_tensor(input_ids).cuda()
-    output_ids = model.eagenerate(input_ids, temperature=0.0, max_new_tokens=2048)
-    LIO_suggestions_raw = model.tokenizer.decode(output_ids[0])
-    LIO_suggestions = suggestionsProcessor(LIO_suggestions_raw)
-    return LIO_suggestions
+    output_ids = model.eagenerate(input_ids, temperature=0.0, max_new_tokens=512)
+    LIO_suggestions = model.tokenizer.decode(output_ids[0])
+    print(LIO_suggestions)
 
 
 categories = ["writing",
@@ -155,20 +143,16 @@ categories = ["writing",
               "long-context synthetic",
               "long-context code completion"]
 
-model_index = 1
+EAGLE_model = EAGLE_LIO_init()
 
-# Getting LIO Suggestions with EAGLE-3
-EAGLE_model = EAGLE_LIO_init(model_index)
-EAGLE_LIO_suggestions_set = {}
+# Getting LIO Suggestions with EAGLE-3 for model setup
+print(f"\n\n********** MODEL SETTINGS **********")
+EAGLE_LIO_model(EAGLE_model)
 
-for i in range(len(categories)):
-    # Getting EAGLE LIO Suggestions
-    LIO_suggestions = EAGLE_LIO(categories[i], EAGLE_model)
-    EAGLE_LIO_suggestions_set[categories[i]] = LIO_suggestions
-    print(LIO_suggestions)
-
-for category in EAGLE_LIO_suggestions_set:
-    print(category, ": ", EAGLE_LIO_suggestions_set[category])
+# Getting LIO Suggestions with EAGLE-3 for eagenerate setup
+for i in range(13):
+    print(f"\n\n********** {categories[i]} SETTINGS **********")
+    EAGLE_LIO_eagenerate(categories[i], EAGLE_model)
 
 
 '''
