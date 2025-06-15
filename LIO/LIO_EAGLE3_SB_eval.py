@@ -29,10 +29,10 @@ def template_getter(model_index):
     else:
         return base_model_paths[model_index]
 
-total_token = 1000
-depth = 20
-top_k_model = 50
-threshold = 0.5
+total_token = 60
+depth = 25
+top_k_model = 50 
+threshold = 0.75
 
 # Optimal Settings Suggested By DeepSeek-R1-Distill-Llama-8B
 # print("Optimal Model Settings Suggested By DeepSeek-R1-Distill-Llama-8B")
