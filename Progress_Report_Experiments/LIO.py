@@ -75,7 +75,7 @@ def EAGLE_LIO_model(model):
     "Be very clear in your decision and be concise.\n" \
     "Note: Depth = maximum draft length. \n" \
     "Top_k = maximum number of tokens drafted in each layer. \n" \
-    "Total_token = number of draft tokens."
+    "Total_token = number of draft tokens. Default value is 60."
 
     # Below Code Block From: https://github.com/SafeAILab/EAGLE
     conv = get_conversation_template(template_getter())
