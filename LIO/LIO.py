@@ -84,7 +84,7 @@ def EAGLE_LIO_model(model):
     LIO_prompt = conv.get_prompt()
     input_ids = model.tokenizer([LIO_prompt]).input_ids
     input_ids = torch.as_tensor(input_ids).cuda()
-    output_ids = model.eagenerate(input_ids, temperature=0.0, max_new_tokens=1024)
+    output_ids = model.eagenerate(input_ids, temperature=0.0, max_new_tokens=512)
     LIO_suggestions = model.tokenizer.decode(output_ids[0])
     print(LIO_suggestions)
 
@@ -118,7 +118,7 @@ def EAGLE_LIO_eagenerate(prompt_type, model):
     LIO_prompt = conv.get_prompt()
     input_ids = model.tokenizer([LIO_prompt]).input_ids
     input_ids = torch.as_tensor(input_ids).cuda()
-    output_ids = model.eagenerate(input_ids, temperature=0.0, max_new_tokens=512)
+    output_ids = model.eagenerate(input_ids, temperature=0.0, max_new_tokens=256)
     LIO_suggestions = model.tokenizer.decode(output_ids[0])
     print(LIO_suggestions)
 
