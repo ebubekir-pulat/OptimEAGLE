@@ -1,8 +1,8 @@
-print("\n\n*******************************\nStarting SpecDec_LB.py\n\n")
-
+print("\n\n*******************************\nStarting Autoregressive_LB.py\n\n")
+    
+import time
 import numpy as np
 from transformers import AutoModelForCausalLM, AutoTokenizer
-import time
 from fastchat.model import get_conversation_template
 from datasets import load_dataset
 
@@ -31,30 +31,25 @@ for dataset in datasets:
         lb_prompts.append(all_lb_prompts[i])
         counter += 1
 
-LLM_pairs = [["lmsys/vicuna-13b-v1.3", "double7/vicuna-68m"],  # [target model, draft model]
-             ["deepseek-ai/DeepSeek-R1-Distill-Llama-8B", "JackFram/llama-68m"],
-             ["meta-llama/Llama-3.1-8B-Instruct", "JackFram/llama-68m"],
-             ["meta-llama/Llama-3.3-70B-Instruct", "JackFram/llama-68m"]]
+model_paths = ["lmsys/vicuna-13b-v1.3",
+               "deepseek-ai/DeepSeek-R1-Distill-Llama-8B",
+               "meta-llama/Llama-3.1-8B-Instruct",
+               "meta-llama/Llama-3.3-70B-Instruct"]
 
 def template_getter(model_index):
     if model_index == 0:
         return "vicuna"
     else:
-        return LLM_pairs[model_index][0]
-    
+        return model_paths[model_index]
+
 def model_init(model_index):
-    # Below Code Block From: https://huggingface.co/blog/assisted-generation
-    checkpoint = LLM_pairs[model_index][0]
-    assistant_checkpoint = LLM_pairs[model_index][1]
+    # Below Code Block From: https://huggingface.co/learn/llm-course/chapter2/6?fw=pt, https://huggingface.co/docs/hub/transformers
+    checkpoint = model_paths[model_index]
     tokenizer = AutoTokenizer.from_pretrained(checkpoint)
     model = AutoModelForCausalLM.from_pretrained(checkpoint)
-    assistant_model = AutoModelForCausalLM.from_pretrained(assistant_checkpoint)
-    assistant_tokenizer = AutoTokenizer.from_pretrained(assistant_checkpoint)
-
-    # Below Code Lines From: https://github.com/SafeAILab/EAGLE
+    # Below Code Line From: https://github.com/SafeAILab/EAGLE
     model.eval()
-    assistant_model.eval()
-    return model, assistant_model, tokenizer, assistant_tokenizer
+    return model, tokenizer
 
 # Preparing for assessment
 models_to_test = [0, 1, 2, 3]
@@ -72,7 +67,7 @@ print("Last Question Index: ", end_index)
 # LongBench-E Assessment Loop
 for model_index in models_to_test:
     wall_times = []
-    model, assistant_model, tokenizer, assistant_tokenizer = model_init(model_index)
+    model, tokenizer = model_init(model_index)
     for test_run in range(test_runs):
         run = 1
         for i in range(start_index, end_index):
@@ -87,25 +82,23 @@ for model_index in models_to_test:
                 conv.append_message(conv.roles[0], your_message)
                 conv.append_message(conv.roles[1], None)
                 prompt = conv.get_prompt()
-
-                # Below Code Line From: https://huggingface.co/blog/assisted-generation
+                
+                # Below Code Line From: https://huggingface.co/docs/transformers/main/en/model_doc/llama#transformers.LlamaForCausalLM, https://huggingface.co/docs/transformers/main/en/model_doc/llama#transformers.LlamaForCausalLM.forward.example
                 inputs = tokenizer(prompt, return_tensors="pt")
 
                 start = time.perf_counter_ns()
 
-                # 3 Code Lines Below From: https://huggingface.co/blog/assisted-generation
-                outputs = model.generate(**inputs, assistant_model=assistant_model, tokenizer=tokenizer, 
-                                         assistant_tokenizer=assistant_tokenizer, max_new_tokens=max_new_tokens)
-                #print("Output: ", tokenizer.batch_decode(outputs, skip_special_tokens=True))
+                # Below Code Line From: https://huggingface.co/docs/transformers/main/en/model_doc/llama#transformers.LlamaForCausalLM, https://huggingface.co/docs/transformers/main/en/model_doc/llama#transformers.LlamaForCausalLM.forward.example
+                generate_ids = model.generate(inputs.input_ids, max_new_tokens=max_new_tokens)                
 
                 finish = time.perf_counter_ns()
                 elapsed = finish - start
                 wall_times.append(elapsed)
 
     # Print LongBench-E Results
-    print(f"LongBench-E Results for {LLM_pairs[model_index][0]}:")
+    print(f"LongBench-E Results for {model_paths[model_index]}:")
     print("Mean Wall Time (ns): ", np.mean(wall_times))
-
+        
 
 '''
 References
@@ -202,16 +195,6 @@ A. Martins, and V. Srikumar, Eds. Bangkok, Thailand: Association for Computation
 8. DeepSeek-AI, “Deepseek-r1: Incentivizing reasoning capability in llms via reinforcement learning,” 2025. [Online].
 Available: https://arxiv.org/abs/2501.12948
 
-9. Joao Gante, “Assisted generation: a new direction toward low-latency text generation,” 2023. [Online].
-Available: https://huggingface.co/blog/assisted-generation
-
-10. X. Miao, G. Oliaro, Z. Zhang, X. Cheng, Z. Wang, R. Y. Y. Wong, Z. Chen, D. Arfeen, R. Abhyankar, and
-Z. Jia, “Specinfer: Accelerating generative llm serving with speculative inference and token tree verification,”
-2023.
-
-11. S. Yang, S. Huang, X. Dai, and J. Chen, “Multi-candidate speculative decoding,” 2024. [Online]. Available:
-https://arxiv.org/abs/2401.06706
-
 '''
 
-print("\n\n*******************************\nFinished Running SpecDec_LB.py\n\n")
+print("\n\n*******************************\nFinished Running Autoregressive_LB.py\n\n")
