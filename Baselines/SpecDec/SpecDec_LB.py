@@ -1,6 +1,6 @@
 print("\n\n*******************************\nStarting SpecDec_LB.py\n\n")
 
-import numpy as np 
+import numpy as np
 from transformers import AutoModelForCausalLM, AutoTokenizer
 import time
 from fastchat.model import get_conversation_template
@@ -51,15 +51,23 @@ def model_init(model_index):
     assistant_model = AutoModelForCausalLM.from_pretrained(assistant_checkpoint)
     assistant_tokenizer = AutoTokenizer.from_pretrained(assistant_checkpoint)
 
-    # Below Code Line From: https://github.com/SafeAILab/EAGLE
+    # Below Code Lines From: https://github.com/SafeAILab/EAGLE
     model.eval()
+    assistant_model.eval()
     return model, assistant_model, tokenizer, assistant_tokenizer
-
 
 # Preparing for assessment
 models_to_test = [0, 1, 2, 3]
 test_runs = 3
 max_new_tokens = 128
+start_index = 240
+end_index = len(lb_prompts)
+
+print("\nEvaluation Settings Chosen:")
+print("Test Runs: ", test_runs)
+print("Max New Tokens: ", max_new_tokens)
+print("First Question Index: ", start_index)
+print("Last Question Index: ", end_index)
 
 # LongBench-E Assessment Loop
 for model_index in models_to_test:
@@ -67,7 +75,7 @@ for model_index in models_to_test:
     model, assistant_model, tokenizer, assistant_tokenizer = model_init(model_index)
     for test_run in range(test_runs):
         run = 1
-        for i in range(len(lb_prompts)):
+        for i in range(start_index, end_index):
             print("Test Run: ", test_run)
             print("LB Question: ", run)
             run += 1
@@ -188,8 +196,8 @@ models,” 2024. [Online]. Available: https://arxiv.org/abs/2407.21783
 7. Y. Bai, X. Lv, J. Zhang, H. Lyu, J. Tang, Z. Huang, Z. Du, X. Liu, A. Zeng, L. Hou, Y. Dong, J. Tang, and
 J. Li, “LongBench: A bilingual, multitask benchmark for long context understanding,” in Proceedings of the
 62nd Annual Meeting of the Association for Computational Linguistics (Volume 1: Long Papers), L.-W. Ku,
-A. Martins, and V. Srikumar, Eds. Bangkok, Thailand: Association for Computational Linguistics, Aug. 2024,
-pp. 3119–3137. [Online]. Available: https://aclanthology.org/2024.acl-long.172/
+A. Martins, and V. Srikumar, Eds. Bangkok, Thailand: Association for Computational Linguistics, Aug.
+2024, pp. 3119–3137. [Online]. Available: https://aclanthology.org/2024.acl-long.172/
 
 8. DeepSeek-AI, “Deepseek-r1: Incentivizing reasoning capability in llms via reinforcement learning,” 2025. [Online].
 Available: https://arxiv.org/abs/2501.12948
