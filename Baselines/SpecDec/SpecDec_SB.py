@@ -6,15 +6,15 @@ from transformers import AutoModelForCausalLM, AutoTokenizer
 import time
 from fastchat.model import get_conversation_template
 
+# Getting Spec-Bench Questions
+# Reference for below line: https://stackoverflow.com/questions/50475635/loading-jsonl-file-as-json-objects
+jsonObj = pd.read_json(path_or_buf='question.jsonl', lines=True)
+sb_prompts = [jsonObj.at[i, 'turns'] for i in range(len(jsonObj))]
+
 LLM_pairs = [["lmsys/vicuna-13b-v1.3", "double7/vicuna-68m"],  # [target model, draft model]
              ["deepseek-ai/DeepSeek-R1-Distill-Llama-8B", "JackFram/llama-68m"],
              ["meta-llama/Llama-3.1-8B-Instruct", "JackFram/llama-68m"],
              ["meta-llama/Llama-3.3-70B-Instruct", "JackFram/llama-68m"]]
-
-# Getting Spec-Bench Questions
-# Below line from: https://stackoverflow.com/questions/50475635/loading-jsonl-file-as-json-objects
-jsonObj = pd.read_json(path_or_buf='question.jsonl', lines=True)
-sb_prompts = [jsonObj.at[i, 'turns'] for i in range(len(jsonObj))]
 
 def template_getter(model_index):
     if model_index == 0:
@@ -31,15 +31,23 @@ def model_init(model_index):
     assistant_model = AutoModelForCausalLM.from_pretrained(assistant_checkpoint)
     assistant_tokenizer = AutoTokenizer.from_pretrained(assistant_checkpoint)
 
-    # Below Code Line From: https://github.com/SafeAILab/EAGLE
+    # Below Code Lines From: https://github.com/SafeAILab/EAGLE
     model.eval()
+    assistant_model.eval()
     return model, assistant_model, tokenizer, assistant_tokenizer
-
 
 # Preparing for assessment
 models_to_test = [0, 1, 2, 3]
 test_runs = 3
 max_new_tokens = 128
+start_index = 240
+end_index = len(sb_prompts)
+
+print("\nEvaluation Settings Chosen:")
+print("Test Runs: ", test_runs)
+print("Max New Tokens: ", max_new_tokens)
+print("First Question Index: ", start_index)
+print("Last Question Index: ", end_index)
 
 # Spec-Bench Assessment Loop
 for model_index in models_to_test:
@@ -47,7 +55,7 @@ for model_index in models_to_test:
     model, assistant_model, tokenizer, assistant_tokenizer = model_init(model_index)
     for test_run in range(test_runs):
         run = 1
-        for i in range(len(sb_prompts)):
+        for i in range(start_index, end_index):
             print("Test Run: ", test_run)
             print("SB Question: ", run)
             run += 1
