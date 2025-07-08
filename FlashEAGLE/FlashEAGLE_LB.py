@@ -54,9 +54,7 @@ def model_init(model_index):
         base_model_path=base_model_paths[model_index],
         ea_model_path=EAGLE_model_paths[model_index],
         torch_dtype=torch.float16,
-        low_cpu_mem_usage=True,
         device_map="auto",
-        total_token=-1,
         attn_implementation="flash_attention_2",
         trust_remote_code=True
     )
@@ -71,6 +69,11 @@ test_runs = 3
 max_new_tokens = 128
 temp = 0.0
 
+print("\nEvaluation Settings Chosen:")
+print("Test Runs: ", test_runs)
+print("Max New Tokens: ", max_new_tokens)
+print("Temperature: ", temp, "\n")
+
 # LongBench-E Assessment Loop
 for model_index in models_to_test:
     wall_times = []
@@ -84,36 +87,33 @@ for model_index in models_to_test:
             print("LB Question: ", run)
             run += 1
 
-            # Below Code Block From: https://github.com/SafeAILab/EAGLE
-            your_message = lb_prompts[i]
-            if len(your_message) == 1: 
-                your_message = your_message[0]
-            else: 
-                raise("Message Length Above 1")
-            conv = get_conversation_template(template_getter(model_index))
-            conv.append_message(conv.roles[0], your_message)
-            conv.append_message(conv.roles[1], None)
-            prompt = conv.get_prompt()
-            input_ids = model.tokenizer([prompt]).input_ids
-            input_ids = torch.as_tensor(input_ids).cuda()
+            for question in lb_prompts[i]:
+                # Below Code Block From: https://github.com/SafeAILab/EAGLE
+                your_message = question
+                conv = get_conversation_template(template_getter(model_index))
+                conv.append_message(conv.roles[0], your_message)
+                conv.append_message(conv.roles[1], None)
+                prompt = conv.get_prompt()
+                input_ids = model.tokenizer([prompt]).input_ids
+                input_ids = torch.as_tensor(input_ids).cuda()
 
-            start = time.perf_counter_ns()
+                start = time.perf_counter_ns()
 
-            # Below Code Line From: https://github.com/SafeAILab/EAGLE
-            output_ids = model.eagenerate(input_ids, temperature=temp, max_new_tokens=max_new_tokens, log=True)
+                # Below Code Line From: https://github.com/SafeAILab/EAGLE
+                output_ids = model.eagenerate(input_ids, temperature=temp, max_new_tokens=max_new_tokens, log=True)
 
-            finish = time.perf_counter_ns()
-            elapsed = finish - start
-            wall_times.append(elapsed)
+                finish = time.perf_counter_ns()
+                elapsed = finish - start
+                wall_times.append(elapsed)
 
-            new_tokens = int(output_ids[1])
-            tokens_per_second = new_tokens / (elapsed * pow(10, -9))
-            token_rates.append(tokens_per_second)
+                new_tokens = int(output_ids[1])
+                tokens_per_second = new_tokens / (elapsed * pow(10, -9))
+                token_rates.append(tokens_per_second)
 
-            # Reference for below code block: https://github.com/SafeAILab/EAGLE/issues/153
-            steps = int(output_ids[2])
-            avg_accept_len = new_tokens / steps
-            avg_accept_lens.append(avg_accept_len)
+                # Reference for below code block: https://github.com/SafeAILab/EAGLE/issues/153
+                steps = int(output_ids[2])
+                avg_accept_len = new_tokens / steps
+                avg_accept_lens.append(avg_accept_len)
 
     # Print LongBench-E Results
     print(f"LongBench-E Results for {base_model_paths[model_index]}:")
@@ -224,8 +224,8 @@ models,” 2024. [Online]. Available: https://arxiv.org/abs/2407.21783
 10. Y. Bai, X. Lv, J. Zhang, H. Lyu, J. Tang, Z. Huang, Z. Du, X. Liu, A. Zeng, L. Hou, Y. Dong, J. Tang, and
 J. Li, “LongBench: A bilingual, multitask benchmark for long context understanding,” in Proceedings of the
 62nd Annual Meeting of the Association for Computational Linguistics (Volume 1: Long Papers), L.-W. Ku,
-A. Martins, and V. Srikumar, Eds. Bangkok, Thailand: Association for Computational Linguistics, Aug. 2024,
-pp. 3119–3137. [Online]. Available: https://aclanthology.org/2024.acl-long.172/
+A. Martins, and V. Srikumar, Eds. Bangkok, Thailand: Association for Computational Linguistics, Aug.
+2024, pp. 3119–3137. [Online]. Available: https://aclanthology.org/2024.acl-long.172/
 
 11. DeepSeek-AI, “Deepseek-r1: Incentivizing reasoning capability in llms via reinforcement learning,” 2025. [Online].
 Available: https://arxiv.org/abs/2501.12948
