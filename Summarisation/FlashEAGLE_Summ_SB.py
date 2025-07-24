@@ -80,7 +80,7 @@ for model_index in models_to_test:
                 summarised_question = summariser(question)[0]["summary_text"]
 
                 # Below Code Block From: https://github.com/SafeAILab/EAGLE
-                your_message = summarised_question
+                your_message = question
                 conv = get_conversation_template(template_getter(model_index))
                 conv.append_message(conv.roles[0], your_message)
                 conv.append_message(conv.roles[1], None)
@@ -88,10 +88,19 @@ for model_index in models_to_test:
                 input_ids = model.tokenizer([prompt]).input_ids
                 input_ids = torch.as_tensor(input_ids).cuda()
 
+                # Below Code Block From: https://github.com/SafeAILab/EAGLE
+                your_message = summarised_question
+                conv = get_conversation_template(template_getter(model_index))
+                conv.append_message(conv.roles[0], your_message)
+                conv.append_message(conv.roles[1], None)
+                prompt = conv.get_prompt()
+                summ_input_ids = model.tokenizer([prompt]).input_ids
+                summ_input_ids = torch.as_tensor(summ_input_ids).cuda()
+
                 start = time.perf_counter_ns()
 
                 # Below Code Line From: https://github.com/SafeAILab/EAGLE
-                output_ids = model.eagenerate(input_ids, temperature=temp, max_new_tokens=max_new_tokens, log=True)
+                output_ids = model.eagenerate(input_ids, summ_input_ids=summ_input_ids, temperature=temp, max_new_tokens=max_new_tokens, log=True)
 
                 finish = time.perf_counter_ns()
                 elapsed = finish - start
