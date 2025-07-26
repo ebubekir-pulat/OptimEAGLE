@@ -9,4 +9,4 @@ protobuf
 sentencepiece
 numpy
 datasets
-deepseed==0.16.9
+deepspeed==0.16.9
