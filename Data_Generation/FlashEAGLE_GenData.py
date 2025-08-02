@@ -66,8 +66,12 @@ for model_index in models_to_test:
             input_ids = model.tokenizer([prompt]).input_ids
             input_ids = torch.as_tensor(input_ids).cuda()
 
-            # Below Code Line From: https://github.com/SafeAILab/EAGLE
+            # Below Code Block From: https://github.com/SafeAILab/EAGLE
             output_ids = model.eagenerate(input_ids, temperature=temp, max_new_tokens=max_new_tokens, log=True)
+            generated_data=model.tokenizer.decode(output_ids[0])
+            
+            print("Question: ", question)
+            print("Response: ", generated_data)
 
 
 '''
