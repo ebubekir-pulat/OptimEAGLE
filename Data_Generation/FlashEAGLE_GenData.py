@@ -70,7 +70,7 @@ for model_index in models_to_test:
             output_ids = model.eagenerate(input_ids, temperature=temp, max_new_tokens=max_new_tokens, log=True)
             generated_data=model.tokenizer.decode(output_ids[0])
             
-            print("Question: ", question)
+            print("Prompt: ", prompt)
             print("Response: ", generated_data)
 
 
