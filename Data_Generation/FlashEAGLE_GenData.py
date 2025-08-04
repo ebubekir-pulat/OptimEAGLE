@@ -68,7 +68,7 @@ for model_index in models_to_test:
 
             # Below Code Block From: https://github.com/SafeAILab/EAGLE
             output_ids = model.eagenerate(input_ids, temperature=temp, max_new_tokens=max_new_tokens, log=True)
-            generated_data=model.tokenizer.decode(output_ids[0])
+            generated_data=model.tokenizer.decode(output_ids[0][0])
             
             print("Prompt: ", prompt)
             print("Response: ", generated_data)
