@@ -1,15 +1,24 @@
 print("\n\n*******************************\nStarting FlashEAGLE_GenData.py\n\n")
 
-import pandas as pd    
-import numpy as np
 import torch
 from eagle.model.ea_model import EaModel
 from fastchat.model import get_conversation_template
+from datasets import load_dataset
 
-# Getting Spec-Bench Questions
-# Below line from: https://stackoverflow.com/questions/50475635/loading-jsonl-file-as-json-objects
-jsonObj = pd.read_json(path_or_buf='../question.jsonl', lines=True)
-sb_prompts = [jsonObj.at[i, 'turns'] for i in range(len(jsonObj))]
+datasets = ['open-r1/OpenThoughts-114k-math',
+            'shahules786/orca-chat',
+            'OpenCoder-LLM/opc-sft-stage1']
+chosen_dataset = 0
+
+if chosen_dataset == 0:
+    # Below Code Line From: https://huggingface.co/docs/datasets/v4.0.0/en/package_reference/loading_methods#datasets.load_dataset
+    ds = load_dataset(datasets[chosen_dataset])["problem"]
+elif chosen_dataset == 1:
+    # Below Code Line From: https://huggingface.co/docs/datasets/v4.0.0/en/package_reference/loading_methods#datasets.load_dataset
+    ds = load_dataset(datasets[chosen_dataset])
+else:
+    # Below Code Line From: https://huggingface.co/docs/datasets/v4.0.0/en/package_reference/loading_methods#datasets.load_dataset
+    ds = load_dataset(datasets[chosen_dataset], 'largescale_diverse_instruct', split='train')
 
 base_model_paths = ["lmsys/vicuna-13b-v1.3",
                     "deepseek-ai/DeepSeek-R1-Distill-Llama-8B",
@@ -25,7 +34,7 @@ def template_getter(model_index):
     if model_index == 0:
         return "vicuna"
     else:
-        return base_model_paths[model_index]
+        return "llama3"
 
 def model_init(model_index):
     # Below Code Block From: https://github.com/SafeAILab/EAGLE
@@ -43,11 +52,12 @@ def model_init(model_index):
     return model
 
 # Preparing for assessment
-models_to_test = [2, 3]
+models_to_test = [2]
 max_new_tokens = 1024
 temp = 0.0
 
 print("\nGeneration Settings Chosen:")
+print("Dataset: ", datasets[chosen_dataset])
 print("Max New Tokens: ", max_new_tokens)
 print("Temperature: ", temp, "\n")
 
@@ -55,8 +65,8 @@ print("Temperature: ", temp, "\n")
 for model_index in models_to_test:
     model = model_init(model_index)
 
-    for i in range(len(sb_prompts)):
-        for question in sb_prompts[i]:
+    for i in range(len(ds)):
+        for question in ds[i]:
             # Below Code Block From: https://github.com/SafeAILab/EAGLE
             your_message = question
             conv = get_conversation_template(template_getter(model_index))
@@ -70,10 +80,10 @@ for model_index in models_to_test:
             output_ids = model.eagenerate(input_ids, temperature=temp, max_new_tokens=len(prompt)+max_new_tokens, log=True)
             generated_data=model.tokenizer.decode(output_ids[0][0])
 
-            response_index = generated_data.find("### Assistant: ", 300) + len("### Assistant: ")
-            generated_data = generated_data[response_index:]
-            generated_data = generated_data[:generated_data.find("### Human:")]
-            generated_data = generated_data.strip()
+            #response_index = generated_data.find("### Assistant: ", 300) + len("### Assistant: ")
+            #generated_data = generated_data[response_index:]
+            #generated_data = generated_data[:generated_data.find("### Human:")]
+            #generated_data = generated_data.strip()
             
             print("\n\n*********************************************\nPrompt: ", question)
             print("\nResponse: ", generated_data)
