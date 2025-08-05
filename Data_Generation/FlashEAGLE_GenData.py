@@ -12,10 +12,10 @@ chosen_dataset = 0
 
 if chosen_dataset == 0:
     # Below Code Line From: https://huggingface.co/docs/datasets/v4.0.0/en/package_reference/loading_methods#datasets.load_dataset
-    ds = load_dataset(datasets[chosen_dataset])["problem"]
+    ds = load_dataset(datasets[chosen_dataset], split='train')["problem"]
 elif chosen_dataset == 1:
     # Below Code Line From: https://huggingface.co/docs/datasets/v4.0.0/en/package_reference/loading_methods#datasets.load_dataset
-    ds = load_dataset(datasets[chosen_dataset])
+    ds = load_dataset(datasets[chosen_dataset], split='train')
 else:
     # Below Code Line From: https://huggingface.co/docs/datasets/v4.0.0/en/package_reference/loading_methods#datasets.load_dataset
     ds = load_dataset(datasets[chosen_dataset], 'largescale_diverse_instruct', split='train')
