@@ -16,9 +16,14 @@ if chosen_dataset == 0:
 elif chosen_dataset == 1:
     # Below Code Line From: https://huggingface.co/docs/datasets/v4.0.0/en/package_reference/loading_methods#datasets.load_dataset
     ds = load_dataset(datasets[chosen_dataset], split='train')
-else:
+elif chosen_dataset == 2:
     # Below Code Line From: https://huggingface.co/docs/datasets/v4.0.0/en/package_reference/loading_methods#datasets.load_dataset
-    ds = load_dataset(datasets[chosen_dataset], 'largescale_diverse_instruct', split='train')
+    ds = load_dataset(datasets[chosen_dataset], 'largescale_diverse_instruct', split='train')["instruction"]
+
+if chosen_dataset == 1:
+    start_index = 10
+    instruction = ds["instruction"][start_index:]
+    conversation = ds["conversation"][start_index:]
 
 base_model_paths = ["lmsys/vicuna-13b-v1.3",
                     "deepseek-ai/DeepSeek-R1-Distill-Llama-8B",
@@ -53,7 +58,7 @@ def model_init(model_index):
 
 # Preparing for assessment
 models_to_test = [2]
-max_new_tokens = 1024
+max_new_tokens = 2048
 temp = 0.0
 
 print("\nGeneration Settings Chosen:")
@@ -65,8 +70,8 @@ print("Temperature: ", temp, "\n")
 for model_index in models_to_test:
     model = model_init(model_index)
 
-    for i in range(len(ds)):
-        for question in ds[i]:
+    if chosen_dataset != 1:
+        for question in ds:
             # Below Code Block From: https://github.com/SafeAILab/EAGLE
             your_message = question
             conv = get_conversation_template(template_getter(model_index))
@@ -80,13 +85,36 @@ for model_index in models_to_test:
             output_ids = model.eagenerate(input_ids, temperature=temp, max_new_tokens=len(prompt)+max_new_tokens, log=True)
             generated_data=model.tokenizer.decode(output_ids[0][0])
 
-            #response_index = generated_data.find("### Assistant: ", 300) + len("### Assistant: ")
-            #generated_data = generated_data[response_index:]
-            #generated_data = generated_data[:generated_data.find("### Human:")]
-            #generated_data = generated_data.strip()
+            response_index = generated_data.find("### Assistant: ", 300) + len("### Assistant: ")
+            generated_data = generated_data[response_index:]
+            generated_data = generated_data[:generated_data.find("### Human:")]
+            generated_data = generated_data.strip()
             
             print("\n\n*********************************************\nPrompt: ", question)
             print("\nResponse: ", generated_data)
+    else:
+        for i in range(len(instruction)):
+            for j in range(len(conversation[i])):
+                # Below Code Block From: https://github.com/SafeAILab/EAGLE
+                your_message = instruction[i] + "\n" + conversation[i][j]["input"]
+                conv = get_conversation_template(template_getter(model_index))
+                conv.append_message(conv.roles[0], your_message)
+                conv.append_message(conv.roles[1], None)
+                prompt = conv.get_prompt()
+                input_ids = model.tokenizer([prompt]).input_ids
+                input_ids = torch.as_tensor(input_ids).cuda()
+
+                # Below Code Block From: https://github.com/SafeAILab/EAGLE
+                output_ids = model.eagenerate(input_ids, temperature=temp, max_new_tokens=len(prompt)+max_new_tokens, log=True)
+                generated_data=model.tokenizer.decode(output_ids[0][0])
+
+                response_index = generated_data.find("### Assistant: ", 300) + len("### Assistant: ")
+                generated_data = generated_data[response_index:]
+                generated_data = generated_data[:generated_data.find("### Human:")]
+                generated_data = generated_data.strip()
+                
+                print("\n\n*********************************************\nPrompt: ", your_message)
+                print("\nResponse: ", generated_data)
 
 
 '''
