@@ -128,8 +128,19 @@ for model_index in models_to_test:
                 generated_data = generated_data[:generated_data.find("### Human:")]
                 generated_data = generated_data.strip()
                 
-                print("\n\n*********************************************\nPrompt: ", your_message)
-                print("\nResponse: ", generated_data)
+                #print("\n\n*********************************************\nPrompt: ", your_message)
+                #print("\nResponse: ", generated_data)
+
+                # Below Code Block From: https://github.com/sgl-project/SpecForge/blob/main/scripts/prepare_data.py
+                row_id = hashlib.md5((your_message + generated_data).encode()).hexdigest()
+                output = {
+                    "id": row_id,
+                    "conversations": [
+                        {"role": "user", "content": your_message},
+                        {"role": "assistant", "content": generated_data},
+                    ],
+                }
+                outputs.append(output)
 
 
 # Below Code Block From: https://github.com/sgl-project/SpecForge/blob/main/scripts/prepare_data.py
