@@ -74,7 +74,7 @@ import hashlib, json
 for model_index in models_to_test:
     model = model_init(model_index)
 
-    if chosen_dataset == 2:
+    if chosen_dataset != 1:
         for question in ds:
             # Below Code Block From: https://github.com/SafeAILab/EAGLE
             your_message = question
