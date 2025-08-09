@@ -66,11 +66,15 @@ print("Dataset: ", datasets[chosen_dataset])
 print("Max New Tokens: ", max_new_tokens)
 print("Temperature: ", temp, "\n")
 
+outputs = []
+
+import hashlib, json
+
 # Generation Loop
 for model_index in models_to_test:
     model = model_init(model_index)
 
-    if chosen_dataset != 1:
+    if chosen_dataset == 2:
         for question in ds:
             # Below Code Block From: https://github.com/SafeAILab/EAGLE
             your_message = question
@@ -90,8 +94,19 @@ for model_index in models_to_test:
             generated_data = generated_data[:generated_data.find("### Human:")]
             generated_data = generated_data.strip()
             
-            print("\n\n*********************************************\nPrompt: ", question)
-            print("\nResponse: ", generated_data)
+            #print("\n\n*********************************************\nPrompt: ", question)
+            #print("\nResponse: ", generated_data)
+           
+            # Below Code Block From: https://github.com/sgl-project/SpecForge/blob/main/scripts/prepare_data.py
+            row_id = hashlib.md5((question + generated_data).encode()).hexdigest()
+            output = {
+                "id": row_id,
+                "conversations": [
+                    {"role": "user", "content": question},
+                    {"role": "assistant", "content": generated_data},
+                ],
+            }
+            outputs.append(output)
     else:
         for i in range(len(instruction)):
             for j in range(len(conversation[i])):
@@ -115,6 +130,12 @@ for model_index in models_to_test:
                 
                 print("\n\n*********************************************\nPrompt: ", your_message)
                 print("\nResponse: ", generated_data)
+
+
+# Below Code Block From: https://github.com/sgl-project/SpecForge/blob/main/scripts/prepare_data.py
+with open(datasets[chosen_dataset]+"_gen.jsonl", "w") as f:
+    for output in outputs:
+        f.write(json.dumps(output) + "\n")
 
 
 '''
