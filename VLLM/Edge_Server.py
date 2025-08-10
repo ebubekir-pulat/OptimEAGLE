@@ -32,3 +32,16 @@ print("Wall Time (ns): ", elapsed)
 #    prompt = output.prompt
 #    generated_text = output.outputs[0].text
 #    print(f"Prompt: {prompt!r}, Generated text: {generated_text!r}")
+
+'''
+References
+
+Add Rest
+
+1. W. Kwon, Z. Li, S. Zhuang, Y. Sheng, L. Zheng, C. H. Yu, J. Gonzalez, H. Zhang, and I. Stoica,
+“Efficient memory management for large language model serving with pagedattention,” in Proceedings of
+the 29th Symposium on Operating Systems Principles, ser. SOSP ’23. New York, NY, USA: Association for
+Computing Machinery, 2023, p. 611–626. [Online]. Available: https://doi.org/10.1145/3600006.3613165
+
+
+'''
