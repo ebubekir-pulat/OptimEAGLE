@@ -14,8 +14,8 @@ questions = []
 for question in sb_prompts:
     questions.append(question)
 
-# Code in Rest of File From: https://docs.vllm.ai/en/stable/features/spec_decode.html#speculating-using-eagle-based-draft-models
-sampling_params = SamplingParams(temperature=0.0)
+# Part of Code in Rest of File From: https://docs.vllm.ai/en/stable/features/spec_decode.html#speculating-using-eagle-based-draft-models
+sampling_params = SamplingParams(temperature=0.0, max_tokens=128)
 
 llm = LLM(
     model="meta-llama/Llama-3.1-8B-Instruct",
