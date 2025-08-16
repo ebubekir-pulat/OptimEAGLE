@@ -6,6 +6,46 @@ import numpy as np
 import torch
 from eagle.model.ea_model import EaModel
 from fastchat.model import get_conversation_template
+from transformers import pipeline, T5ForConditionalGeneration, T5Tokenizer
+
+# Preparing Translater
+# Reference for below code block: https://huggingface.co/utrobinmv/t5_translate_en_ru_zh_small_1024 
+model_name = 'utrobinmv/t5_translate_en_ru_zh_small_1024'
+model = T5ForConditionalGeneration.from_pretrained(model_name)
+model.to('cuda')
+tokenizer = T5Tokenizer.from_pretrained(model_name)
+# Note: Put References for above link
+
+def zh_to_en(question):
+    # Reference for below code block: https://huggingface.co/utrobinmv/t5_translate_en_ru_zh_small_1024
+    prompt = 'translate to en: ' + question
+    input_ids = tokenizer(prompt, return_tensors="pt")
+    generated_tokens = model.generate(**input_ids.to('cuda'))
+    return tokenizer.batch_decode(generated_tokens, skip_special_tokens=True) 
+
+def en_to_zh():
+    # Reference for below code block: https://huggingface.co/utrobinmv/t5_translate_en_ru_zh_small_1024
+    prompt = 'translate to zh: ' + question
+    input_ids = tokenizer(prompt, return_tensors="pt")
+    generated_tokens = model.generate(**input_ids.to('cuda'))
+    return tokenizer.batch_decode(generated_tokens, skip_special_tokens=True) 
+
+# Preparing Summariser
+# Below Code Block From: https://huggingface.co/pszemraj/long-t5-tglobal-base-16384-book-summary
+summariser = pipeline(
+    "summarization",
+    "pszemraj/long-t5-tglobal-base-16384-book-summary",
+    device=0 if torch.cuda.is_available() else -1,
+)
+
+def summarise_question(question):
+    #Below Code Block From: https://huggingface.co/pszemraj/long-t5-tglobal-base-16384-book-summary
+    summed_question = summariser(question)
+    return summed_question[0]["summary_text"]
+    # Note: Remember to put reference at end for above link.
+
+def rank_retrieve_question():
+
 
 # Getting Spec-Bench Questions
 # Below line from: https://stackoverflow.com/questions/50475635/loading-jsonl-file-as-json-objects
@@ -44,7 +84,7 @@ def model_init(model_index):
     return model
 
 # Preparing for assessment
-models_to_test = [2, 3]
+models_to_test = [2]
 test_runs = 3
 max_new_tokens = 128
 temp = 0.0
@@ -60,6 +100,7 @@ for model_index in models_to_test:
     token_rates = []
     avg_accept_lens = []
     model = model_init(model_index)
+    translate = False
     for test_run in range(test_runs):
         run = 1
         for i in range(len(sb_prompts)):
@@ -70,6 +111,10 @@ for model_index in models_to_test:
             for question in sb_prompts[i]:
                 # Below Code Block From: https://github.com/SafeAILab/EAGLE
                 your_message = question
+
+                if translate == True:
+                    your_message = zh_to_en(your_message)
+
                 conv = get_conversation_template(template_getter(model_index))
                 conv.append_message(conv.roles[0], your_message)
                 conv.append_message(conv.roles[1], None)
@@ -81,6 +126,10 @@ for model_index in models_to_test:
 
                 # Below Code Line From: https://github.com/SafeAILab/EAGLE
                 output_ids = model.eagenerate(input_ids, temperature=temp, max_new_tokens=max_new_tokens, log=True)
+
+                if translate == True:
+                    # Below Code Block From: https://github.com/SafeAILab/EAGLE
+                    translated_output = en_to_zh(model.tokenizer.decode(output_ids[0]))
 
                 finish = time.perf_counter_ns()
                 elapsed = finish - start
