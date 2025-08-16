@@ -6,7 +6,9 @@ import numpy as np
 import torch
 from eagle.model.ea_model import EaModel
 from fastchat.model import get_conversation_template
-from transformers import pipeline, T5ForConditionalGeneration, T5Tokenizer
+from transformers import pipeline, T5ForConditionalGeneration, T5Tokenizer, AutoModelForSequenceClassification, AutoTokenizer
+
+# Context Compression - Translation
 
 # Preparing Translater
 # Reference for below code block: https://huggingface.co/utrobinmv/t5_translate_en_ru_zh_small_1024 
@@ -30,6 +32,8 @@ def en_to_zh():
     generated_tokens = model.generate(**input_ids.to('cuda'))
     return tokenizer.batch_decode(generated_tokens, skip_special_tokens=True) 
 
+# Context Compression - Summarisation
+
 # Preparing Summariser
 # Below Code Block From: https://huggingface.co/pszemraj/long-t5-tglobal-base-16384-book-summary
 summariser = pipeline(
@@ -44,8 +48,28 @@ def summarise_question(question):
     return summed_question[0]["summary_text"]
     # Note: Remember to put reference at end for above link.
 
+
+# Context Compression - Ranked Retrieval
+# Below code block from: https://huggingface.co/tomaarsen/Qwen3-Reranker-0.6B-seq-cls
+tokenizer = AutoTokenizer.from_pretrained("tomaarsen/Qwen3-Reranker-0.6B-seq-cls", padding_side="left")
+model = AutoModelForSequenceClassification.from_pretrained("tomaarsen/Qwen3-Reranker-0.6B-seq-cls", torch_dtype=torch.float16, attn_implementation="flash_attention_2").cuda().eval()
+max_length = 8192
+task = "Given a web search query, retrieve relevant passages that answer the query"
+
+# Below code block from: https://huggingface.co/tomaarsen/Qwen3-Reranker-0.6B-seq-cls
+def format_instruction(instruction, query, doc):
+    prefix = '<|im_start|>system\nJudge whether the Document meets the requirements based on the Query and the Instruct provided. Note that the answer can only be "yes" or "no".<|im_end|>\n<|im_start|>user\n'
+    suffix = "<|im_end|>\n<|im_start|>assistant\n<think>\n\n</think>\n\n"
+    if instruction is None:
+        instruction = (
+            "Given a web search query, retrieve relevant passages that answer the query"
+        )
+    output = f"{prefix}<Instruct>: {instruction}\n<Query>: {query}\n<Document>: {doc}{suffix}"
+    return output
+
 def rank_retrieve_question():
 
+# Note: Reference for ranked retrieval
 
 # Getting Spec-Bench Questions
 # Below line from: https://stackoverflow.com/questions/50475635/loading-jsonl-file-as-json-objects
