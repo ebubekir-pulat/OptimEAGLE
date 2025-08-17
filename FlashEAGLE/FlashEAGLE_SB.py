@@ -81,12 +81,16 @@ sb_prompts = [jsonObj.at[i, 'turns'] for i in range(len(jsonObj))]
 base_model_paths = ["lmsys/vicuna-13b-v1.3",
                     "deepseek-ai/DeepSeek-R1-Distill-Llama-8B",
                     "meta-llama/Llama-3.1-8B-Instruct",
-                    "meta-llama/Llama-3.3-70B-Instruct"]
+                    "meta-llama/Llama-3.3-70B-Instruct",
+                    "Qwen/Qwen3-1.7B"]
 
 EAGLE_model_paths = ["yuhuili/EAGLE3-Vicuna1.3-13B",
                      "yuhuili/EAGLE3-DeepSeek-R1-Distill-LLaMA-8B",
                      "yuhuili/EAGLE3-LLaMA3.1-Instruct-8B",
-                     "yuhuili/EAGLE3-LLaMA3.3-Instruct-70B"]
+                     "yuhuili/EAGLE3-LLaMA3.3-Instruct-70B",
+                     "AngelSlim/Qwen3-1.7B_eagle3"]
+
+# Note: Reference for Qwen3: https://huggingface.co/Qwen/Qwen3-1.7B, https://huggingface.co/AngelSlim/Qwen3-1.7B_eagle3
 
 def template_getter(model_index):
     if model_index == 0:
@@ -191,6 +195,7 @@ chinese_ds = load_dataset("PKU-Alignment/Align-Anything-Instruction-100K-zh", sp
 # Reference for above link
 
 AAI_outputs = []
+models_to_test = [4]
 translate = True
 
 print("\nEvaluation Settings Chosen:")
