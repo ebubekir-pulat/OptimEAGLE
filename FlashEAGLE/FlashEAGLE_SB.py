@@ -5,6 +5,7 @@ import pandas as pd
 import time
 import numpy as np
 import torch
+import json
 from eagle.model.ea_model import EaModel
 from fastchat.model import get_conversation_template
 from transformers import pipeline, T5ForConditionalGeneration, T5Tokenizer, AutoModelForSequenceClassification, AutoTokenizer
@@ -119,6 +120,8 @@ print("Test Runs: ", test_runs)
 print("Max New Tokens: ", max_new_tokens)
 print("Temperature: ", temp, "\n")
 
+SB_outputs = []
+
 # Spec-Bench Assessment Loop
 for model_index in models_to_test:
     wall_times = []
@@ -136,8 +139,6 @@ for model_index in models_to_test:
             for question in sb_prompts[i]:
                 # Below Code Block From: https://github.com/SafeAILab/EAGLE
                 your_message = question
-                if translate == True:
-                    your_message = zh_to_en(your_message)
                 conv = get_conversation_template(template_getter(model_index))
                 conv.append_message(conv.roles[0], your_message)
                 conv.append_message(conv.roles[1], None)
@@ -147,12 +148,9 @@ for model_index in models_to_test:
 
                 start = time.perf_counter_ns()
 
-                # Below Code Line From: https://github.com/SafeAILab/EAGLE
+                # Below Code Block From: https://github.com/SafeAILab/EAGLE
                 output_ids = model.eagenerate(input_ids, temperature=temp, max_new_tokens=max_new_tokens, log=True)
-
-                if translate == True:
-                    # Below Code Line From: https://github.com/SafeAILab/EAGLE
-                    translated_output = en_to_zh(model.tokenizer.decode(output_ids[0]))
+                SB_output = model.tokenizer.decode(output_ids[0])
 
                 finish = time.perf_counter_ns()
                 elapsed = finish - start
@@ -167,6 +165,13 @@ for model_index in models_to_test:
                 avg_accept_len = new_tokens / steps
                 avg_accept_lens.append(avg_accept_len)
 
+                # Below Code Block From: https://github.com/sgl-project/SpecForge/blob/main/scripts/prepare_data.py
+                output = {
+                    "id": run,
+                    "output": SB_output
+                }
+                SB_outputs.append(output)
+
     # Print Spec-Bench Results
     print(f"Spec-Bench Results for {base_model_paths[model_index]}:")
     print("Mean Wall Time (ns): ", np.mean(wall_times))
@@ -174,10 +179,25 @@ for model_index in models_to_test:
     print("Average Acceptance Length: ", np.mean(avg_accept_lens))
 
 
+# Below Code Block From: https://github.com/sgl-project/SpecForge/blob/main/scripts/prepare_data.py
+with open("SB_output.jsonl", "w") as f:
+    for output in SB_outputs:
+        f.write(json.dumps(output) + "\n")
+# Reference for above link
+
 # Chinese (AAI) Dataset
 # Reference for below line: https://huggingface.co/datasets/PKU-Alignment/Align-Anything-Instruction-100K-zh
 chinese_ds = load_dataset("PKU-Alignment/Align-Anything-Instruction-100K-zh", split="test")["prompt"]
 # Reference for above link
+
+AAI_outputs = []
+translate = True
+
+print("\nEvaluation Settings Chosen:")
+print("Test Runs: ", test_runs)
+print("Max New Tokens: ", max_new_tokens)
+print("Temperature: ", temp)
+print("Translate: ", translate, "\n")
 
 # AAI Dataset Assessment Loop
 for model_index in models_to_test:
@@ -185,7 +205,6 @@ for model_index in models_to_test:
     token_rates = []
     avg_accept_lens = []
     model = model_init(model_index)
-    translate = True
     for test_run in range(test_runs):
         run = 1
         for question in chinese_ds:
@@ -226,11 +245,24 @@ for model_index in models_to_test:
             avg_accept_len = new_tokens / steps
             avg_accept_lens.append(avg_accept_len)
 
+            # Below Code Block From: https://github.com/sgl-project/SpecForge/blob/main/scripts/prepare_data.py
+            output = {
+                "id": run,
+                "output": translated_output
+            }
+            AAI_outputs.append(output)
+
     # Print AAI Dataset Results
     print(f"AAI Results for {base_model_paths[model_index]}:")
     print("Mean Wall Time (ns): ", np.mean(wall_times))
     print("Mean Tokens Generated/s: ", np.mean(token_rates))
     print("Average Acceptance Length: ", np.mean(avg_accept_lens))
+
+
+# Below Code Block From: https://github.com/sgl-project/SpecForge/blob/main/scripts/prepare_data.py
+with open("AAI_output.jsonl", "w") as f:
+    for output in AAI_outputs:
+        f.write(json.dumps(output) + "\n")
 
 
 '''
