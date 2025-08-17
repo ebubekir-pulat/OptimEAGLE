@@ -1,5 +1,6 @@
 print("\n\n*******************************\nStarting FlashEAGLE_SB.py\n\n")
 
+from datasets import load_dataset
 import pandas as pd    
 import time
 import numpy as np
@@ -67,7 +68,7 @@ def format_instruction(instruction, query, doc):
     output = f"{prefix}<Instruct>: {instruction}\n<Query>: {query}\n<Document>: {doc}{suffix}"
     return output
 
-def rank_retrieve_question():
+#def rank_retrieve_question():
 
 # Note: Reference for ranked retrieval
 
@@ -135,10 +136,8 @@ for model_index in models_to_test:
             for question in sb_prompts[i]:
                 # Below Code Block From: https://github.com/SafeAILab/EAGLE
                 your_message = question
-
                 if translate == True:
                     your_message = zh_to_en(your_message)
-
                 conv = get_conversation_template(template_getter(model_index))
                 conv.append_message(conv.roles[0], your_message)
                 conv.append_message(conv.roles[1], None)
@@ -152,7 +151,7 @@ for model_index in models_to_test:
                 output_ids = model.eagenerate(input_ids, temperature=temp, max_new_tokens=max_new_tokens, log=True)
 
                 if translate == True:
-                    # Below Code Block From: https://github.com/SafeAILab/EAGLE
+                    # Below Code Line From: https://github.com/SafeAILab/EAGLE
                     translated_output = en_to_zh(model.tokenizer.decode(output_ids[0]))
 
                 finish = time.perf_counter_ns()
@@ -170,6 +169,65 @@ for model_index in models_to_test:
 
     # Print Spec-Bench Results
     print(f"Spec-Bench Results for {base_model_paths[model_index]}:")
+    print("Mean Wall Time (ns): ", np.mean(wall_times))
+    print("Mean Tokens Generated/s: ", np.mean(token_rates))
+    print("Average Acceptance Length: ", np.mean(avg_accept_lens))
+
+
+# Chinese (AAI) Dataset
+# Reference for below line: https://huggingface.co/datasets/PKU-Alignment/Align-Anything-Instruction-100K-zh
+chinese_ds = load_dataset("PKU-Alignment/Align-Anything-Instruction-100K-zh", split="test")["prompt"]
+# Reference for above link
+
+# AAI Dataset Assessment Loop
+for model_index in models_to_test:
+    wall_times = []
+    token_rates = []
+    avg_accept_lens = []
+    model = model_init(model_index)
+    translate = True
+    for test_run in range(test_runs):
+        run = 1
+        for question in chinese_ds:
+            print("Test Run: ", test_run)
+            print("Test Question: ", run)
+            run += 1
+
+            # Below Code Block From: https://github.com/SafeAILab/EAGLE
+            your_message = question
+            if translate == True:
+                your_message = zh_to_en(your_message)
+            conv = get_conversation_template(template_getter(model_index))
+            conv.append_message(conv.roles[0], your_message)
+            conv.append_message(conv.roles[1], None)
+            prompt = conv.get_prompt()
+            input_ids = model.tokenizer([prompt]).input_ids
+            input_ids = torch.as_tensor(input_ids).cuda()
+
+            start = time.perf_counter_ns()
+
+            # Below Code Line From: https://github.com/SafeAILab/EAGLE
+            output_ids = model.eagenerate(input_ids, temperature=temp, max_new_tokens=max_new_tokens, log=True)
+
+            if translate == True:
+                # Below Code Line From: https://github.com/SafeAILab/EAGLE
+                translated_output = en_to_zh(model.tokenizer.decode(output_ids[0]))
+
+            finish = time.perf_counter_ns()
+            elapsed = finish - start
+            wall_times.append(elapsed)
+
+            new_tokens = int(output_ids[1])
+            tokens_per_second = new_tokens / (elapsed * pow(10, -9))
+            token_rates.append(tokens_per_second)
+
+            # Reference for below code block: https://github.com/SafeAILab/EAGLE/issues/153
+            steps = int(output_ids[2])
+            avg_accept_len = new_tokens / steps
+            avg_accept_lens.append(avg_accept_len)
+
+    # Print AAI Dataset Results
+    print(f"AAI Results for {base_model_paths[model_index]}:")
     print("Mean Wall Time (ns): ", np.mean(wall_times))
     print("Mean Tokens Generated/s: ", np.mean(token_rates))
     print("Average Acceptance Length: ", np.mean(avg_accept_lens))
