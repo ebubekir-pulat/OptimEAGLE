@@ -7,7 +7,8 @@ from datasets import load_dataset
 
 datasets = ['open-r1/OpenThoughts-114k-math',
             'shahules786/orca-chat',
-            'OpenCoder-LLM/opc-sft-stage1']
+            'OpenCoder-LLM/opc-sft-stage1',
+            'PKU-Alignment/Align-Anything-Instruction-100K-zh']
 chosen_dataset = 0
 
 if chosen_dataset == 0:
@@ -19,6 +20,11 @@ elif chosen_dataset == 1:
 elif chosen_dataset == 2:
     # Below Code Line From: https://huggingface.co/docs/datasets/v4.0.0/en/package_reference/loading_methods#datasets.load_dataset
     ds = load_dataset(datasets[chosen_dataset], 'largescale_diverse_instruct', split='train')["instruction"]
+elif chosen_dataset == 3:
+    # Chinese (AAI) Dataset
+    # Reference for below line: https://huggingface.co/datasets/PKU-Alignment/Align-Anything-Instruction-100K-zh
+    ds = load_dataset("PKU-Alignment/Align-Anything-Instruction-100K-zh", split="train")["prompt"]
+    # Reference for above link
 
 if chosen_dataset == 1:
     start_index = 10
@@ -28,18 +34,20 @@ if chosen_dataset == 1:
 base_model_paths = ["lmsys/vicuna-13b-v1.3",
                     "deepseek-ai/DeepSeek-R1-Distill-Llama-8B",
                     "meta-llama/Llama-3.1-8B-Instruct",
-                    "meta-llama/Llama-3.3-70B-Instruct"]
+                    "meta-llama/Llama-3.3-70B-Instruct",
+                    "Qwen/Qwen3-1.7B"]
 
 EAGLE_model_paths = ["yuhuili/EAGLE3-Vicuna1.3-13B",
                      "yuhuili/EAGLE3-DeepSeek-R1-Distill-LLaMA-8B",
                      "yuhuili/EAGLE3-LLaMA3.1-Instruct-8B",
-                     "yuhuili/EAGLE3-LLaMA3.3-Instruct-70B"]
+                     "yuhuili/EAGLE3-LLaMA3.3-Instruct-70B",
+                     "AngelSlim/Qwen3-1.7B_eagle3"]
 
 def template_getter(model_index):
     if model_index == 0:
         return "vicuna"
     else:
-        return "llama3"
+        return base_model_paths[model_index]
 
 def model_init(model_index):
     # Below Code Block From: https://github.com/SafeAILab/EAGLE
@@ -57,7 +65,7 @@ def model_init(model_index):
     return model
 
 # Preparing for assessment
-models_to_test = [2]
+models_to_test = [4]
 max_new_tokens = 2048
 temp = 0.0
 

@@ -1,5 +1,6 @@
 print("\n\n*******************************\nStarting FlashEAGLE_SB.py\n\n")
 
+import nltk
 from datasets import load_dataset
 import pandas as pd    
 import time
@@ -55,8 +56,6 @@ def summarise_question(question):
 # Below code block from: https://huggingface.co/tomaarsen/Qwen3-Reranker-0.6B-seq-cls
 tokenizer = AutoTokenizer.from_pretrained("tomaarsen/Qwen3-Reranker-0.6B-seq-cls", padding_side="left")
 model = AutoModelForSequenceClassification.from_pretrained("tomaarsen/Qwen3-Reranker-0.6B-seq-cls", torch_dtype=torch.float16, attn_implementation="flash_attention_2").cuda().eval()
-max_length = 8192
-task = "Given a web search query, retrieve relevant passages that answer the query"
 
 # Below code block from: https://huggingface.co/tomaarsen/Qwen3-Reranker-0.6B-seq-cls
 def format_instruction(instruction, query, doc):
@@ -69,9 +68,36 @@ def format_instruction(instruction, query, doc):
     output = f"{prefix}<Instruct>: {instruction}\n<Query>: {query}\n<Document>: {doc}{suffix}"
     return output
 
-#def rank_retrieve_question():
+# Below code block from: https://huggingface.co/tomaarsen/Qwen3-Reranker-0.6B-seq-cls
+def rank_retrieve(context, question):
+    max_length = 8192
+    task = "Given a web search query, retrieve relevant passages that answer the query"
+    context_sentences = nltk.tokenize.sent_tokenize(context, language='english')
+    queries = [question for i in range(len(context_sentences))]
 
-# Note: Reference for ranked retrieval
+    pairs = [format_instruction(task, query, doc) for query, doc in zip(queries, context_sentences)]
+    
+    inputs = tokenizer(
+        pairs,
+        padding=True,
+        truncation=True,
+        max_length=max_length,
+        return_tensors="pt",
+    )
+    logits = model(**inputs).logits.squeeze()
+    relevancies = logits.sigmoid()
+    mean_relevancy = np.mean(relevancies)
+
+    return_context = []
+
+    for i in range(len(relevancies)):
+        if relevancies[i] >= mean_relevancy:
+            return_context += context_sentences[i] + ". "
+
+    return return_context
+
+
+# Note: Reference for ranked retrieval, and NLTK
 
 # Getting Spec-Bench Questions
 # Below line from: https://stackoverflow.com/questions/50475635/loading-jsonl-file-as-json-objects
