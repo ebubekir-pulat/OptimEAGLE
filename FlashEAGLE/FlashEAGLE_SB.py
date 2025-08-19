@@ -296,6 +296,106 @@ with open("AAI_output.jsonl", "w") as f:
         f.write(json.dumps(output) + "\n")
 
 
+# *** LongBench-E ***
+# Note - Reference LongBench-E at bottom
+# Getting LongBench-E Questions
+lb_prompts = []
+
+# Reference for Below Code Block: https://huggingface.co/datasets/THUDM/LongBench 
+datasets = ["qasper", "multifieldqa_en", "hotpotqa", "2wikimqa", "gov_report", "multi_news", "trec", \
+            "triviaqa", "samsum", "passage_count", "passage_retrieval_en", "lcc", "repobench-p"]
+for dataset in datasets:
+    data = load_dataset('THUDM/LongBench', f"{dataset}_e", split='test')
+    all_lb_prompts = []
+
+    for i in range(len(data)):
+        if data[i]["language"] != "zh":
+            prompt = data[i]["context"] + "\n\n" + data[i]["input"]
+            all_lb_prompts.append(prompt)
+    
+    all_lb_prompts.sort(key=len)
+    counter = 0
+
+    for i in range(0, len(all_lb_prompts), 16):
+        if counter == 15:
+            break
+
+        lb_prompts.append(all_lb_prompts[i])
+        counter += 1
+
+LB_outputs = []
+models_to_test = [4]
+summarise = True
+
+print("\nEvaluation Settings Chosen:")
+print("Test Runs: ", test_runs)
+print("Max New Tokens: ", max_new_tokens)
+print("Temperature: ", temp)
+print("Summarise: ", summarise, "\n")
+
+# LongBench-E Assessment Loop
+for model_index in models_to_test:
+    wall_times = []
+    token_rates = []
+    avg_accept_lens = []
+    model = model_init(model_index)
+    for test_run in range(test_runs):
+        run = 1
+        for i in range(len(lb_prompts)):
+            print("Test Run: ", test_run)
+            print("Test Question: ", run)
+            run += 1
+
+            # Below Code Block From: https://github.com/SafeAILab/EAGLE
+            your_message = question
+            if summarise == True:
+                your_message = zh_to_en(your_message)
+            conv = get_conversation_template(template_getter(model_index))
+            conv.append_message(conv.roles[0], your_message)
+            conv.append_message(conv.roles[1], None)
+            prompt = conv.get_prompt()
+            input_ids = model.tokenizer([prompt]).input_ids
+            input_ids = torch.as_tensor(input_ids).cuda()
+
+            start = time.perf_counter_ns()
+
+            # Below Code Line From: https://github.com/SafeAILab/EAGLE
+            output_ids = model.eagenerate(input_ids, temperature=temp, max_new_tokens=max_new_tokens, log=True)
+
+            # Below Code Line From: https://github.com/SafeAILab/EAGLE
+            lb_output = model.tokenizer.decode(output_ids[0])
+
+            finish = time.perf_counter_ns()
+            elapsed = finish - start
+            wall_times.append(elapsed)
+
+            new_tokens = int(output_ids[1])
+            tokens_per_second = new_tokens / (elapsed * pow(10, -9))
+            token_rates.append(tokens_per_second)
+
+            # Reference for below code block: https://github.com/SafeAILab/EAGLE/issues/153
+            steps = int(output_ids[2])
+            avg_accept_len = new_tokens / steps
+            avg_accept_lens.append(avg_accept_len)
+
+            # Below Code Block From: https://github.com/sgl-project/SpecForge/blob/main/scripts/prepare_data.py
+            output = {
+                "id": run,
+                "output": lb_output
+            }
+            LB_outputs.append(output)
+
+    # Print LongBench-E Results
+    print(f"LongBench-E Results for {base_model_paths[model_index]}:")
+    print("Mean Wall Time (ns): ", np.mean(wall_times))
+    print("Mean Tokens Generated/s: ", np.mean(token_rates))
+    print("Average Acceptance Length: ", np.mean(avg_accept_lens))
+
+# Below Code Block From: https://github.com/sgl-project/SpecForge/blob/main/scripts/prepare_data.py
+with open("LBE_output.jsonl", "w") as f:
+    for output in LB_outputs:
+        f.write(json.dumps(output) + "\n")
+
 '''
 References
 
