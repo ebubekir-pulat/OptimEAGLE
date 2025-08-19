@@ -46,7 +46,7 @@ summariser = pipeline(
 )
 
 def summarise_question(question):
-    #Below Code Block From: https://huggingface.co/pszemraj/long-t5-tglobal-base-16384-book-summary
+    # Below Code Block From: https://huggingface.co/pszemraj/long-t5-tglobal-base-16384-book-summary
     summed_question = summariser(question)
     return summed_question[0]["summary_text"]
     # Note: Remember to put reference at end for above link.
@@ -68,9 +68,9 @@ def format_instruction(instruction, query, doc):
     output = f"{prefix}<Instruct>: {instruction}\n<Query>: {query}\n<Document>: {doc}{suffix}"
     return output
 
-# Below code block from: https://huggingface.co/tomaarsen/Qwen3-Reranker-0.6B-seq-cls
+# Code in below function from: https://huggingface.co/tomaarsen/Qwen3-Reranker-0.6B-seq-cls
 def rank_retrieve(context, question):
-    max_length = 8192
+    max_length = 128 * 1024
     task = "Given a web search query, retrieve relevant passages that answer the query"
     context_sentences = nltk.tokenize.sent_tokenize(context, language='english')
     queries = [question for i in range(len(context_sentences))]
@@ -95,8 +95,6 @@ def rank_retrieve(context, question):
             return_context += context_sentences[i] + ". "
 
     return return_context
-
-
 # Note: Reference for ranked retrieval, and NLTK
 
 # Getting Spec-Bench Questions
@@ -140,8 +138,8 @@ def model_init(model_index):
     return model
 
 # Preparing for assessment
-models_to_test = [2]
-test_runs = 3
+models_to_test = [4]
+test_runs = 1
 max_new_tokens = 128
 temp = 0.0
 
@@ -158,7 +156,7 @@ for model_index in models_to_test:
     token_rates = []
     avg_accept_lens = []
     model = model_init(model_index)
-    translate = False
+    
     for test_run in range(test_runs):
         run = 1
         for i in range(len(sb_prompts)):
@@ -214,6 +212,8 @@ with open("SB_output.jsonl", "w") as f:
     for output in SB_outputs:
         f.write(json.dumps(output) + "\n")
 # Reference for above link
+
+# ***
 
 # Chinese (AAI) Dataset
 # Reference for below line: https://huggingface.co/datasets/PKU-Alignment/Align-Anything-Instruction-100K-zh
@@ -300,7 +300,7 @@ with open("AAI_output.jsonl", "w") as f:
 
 
 # *** LongBench-E ***
-# Note - Reference LongBench-E at bottom
+# Note - Reference LongBench-E in reference list
 # Getting LongBench-E Questions
 lb_prompts = []
 
@@ -354,6 +354,8 @@ for model_index in models_to_test:
             print("Test Question: ", run)
             run += 1
 
+            start = time.perf_counter_ns()
+
             # Below Code Block From: https://github.com/SafeAILab/EAGLE
             your_message = lb_prompts[i][0] + "\n\n" + lb_prompts[i][1]
             if summarise == True:
@@ -364,8 +366,6 @@ for model_index in models_to_test:
             prompt = conv.get_prompt()
             input_ids = model.tokenizer([prompt]).input_ids
             input_ids = torch.as_tensor(input_ids).cuda()
-
-            start = time.perf_counter_ns()
 
             # Below Code Line From: https://github.com/SafeAILab/EAGLE
             output_ids = model.eagenerate(input_ids, temperature=temp, max_new_tokens=max_new_tokens, log=True)
