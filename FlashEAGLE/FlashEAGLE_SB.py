@@ -243,6 +243,8 @@ for model_index in models_to_test:
             print("Test Question: ", run)
             run += 1
 
+            start = time.perf_counter_ns()
+
             # Below Code Block From: https://github.com/SafeAILab/EAGLE
             your_message = question
             if translate == True:
@@ -254,14 +256,15 @@ for model_index in models_to_test:
             input_ids = model.tokenizer([prompt]).input_ids
             input_ids = torch.as_tensor(input_ids).cuda()
 
-            start = time.perf_counter_ns()
-
             # Below Code Line From: https://github.com/SafeAILab/EAGLE
             output_ids = model.eagenerate(input_ids, temperature=temp, max_new_tokens=max_new_tokens, log=True)
 
             if translate == True:
                 # Below Code Line From: https://github.com/SafeAILab/EAGLE
-                translated_output = en_to_zh(model.tokenizer.decode(output_ids[0]))
+                aai_output = en_to_zh(model.tokenizer.decode(output_ids[0]))
+            else:
+                # Below Code Line From: https://github.com/SafeAILab/EAGLE
+                aai_output = model.tokenizer.decode(output_ids[0])
 
             finish = time.perf_counter_ns()
             elapsed = finish - start
@@ -279,7 +282,7 @@ for model_index in models_to_test:
             # Below Code Block From: https://github.com/sgl-project/SpecForge/blob/main/scripts/prepare_data.py
             output = {
                 "id": run,
-                "output": translated_output
+                "output": aai_output
             }
             AAI_outputs.append(output)
 
@@ -301,6 +304,10 @@ with open("AAI_output.jsonl", "w") as f:
 # Getting LongBench-E Questions
 lb_prompts = []
 
+# Reference for below code block: https://www.w3schools.com/python/ref_list_sort.asp
+def sort_func(row):
+    return len(row[0])
+
 # Reference for Below Code Block: https://huggingface.co/datasets/THUDM/LongBench 
 datasets = ["qasper", "multifieldqa_en", "hotpotqa", "2wikimqa", "gov_report", "multi_news", "trec", \
             "triviaqa", "samsum", "passage_count", "passage_retrieval_en", "lcc", "repobench-p"]
@@ -310,10 +317,11 @@ for dataset in datasets:
 
     for i in range(len(data)):
         if data[i]["language"] != "zh":
-            prompt = data[i]["context"] + "\n\n" + data[i]["input"]
+            prompt = [data[i]["context"], data[i]["input"]]
             all_lb_prompts.append(prompt)
     
-    all_lb_prompts.sort(key=len)
+    # Reference for below code line: https://www.w3schools.com/python/ref_list_sort.asp
+    all_lb_prompts.sort(key=sort_func)
     counter = 0
 
     for i in range(0, len(all_lb_prompts), 16):
@@ -347,9 +355,9 @@ for model_index in models_to_test:
             run += 1
 
             # Below Code Block From: https://github.com/SafeAILab/EAGLE
-            your_message = question
+            your_message = lb_prompts[i][0] + "\n\n" + lb_prompts[i][1]
             if summarise == True:
-                your_message = zh_to_en(your_message)
+                your_message = summarise_question(lb_prompts[i][0]) + "\n\n" + lb_prompts[i][1]
             conv = get_conversation_template(template_getter(model_index))
             conv.append_message(conv.roles[0], your_message)
             conv.append_message(conv.roles[1], None)
