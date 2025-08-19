@@ -9,5 +9,3 @@ protobuf
 sentencepiece
 numpy
 datasets
-deepspeed==0.16.9
-vllm
