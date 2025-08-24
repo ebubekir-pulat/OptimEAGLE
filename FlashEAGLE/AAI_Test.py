@@ -6,22 +6,14 @@ import torch
 import json
 from eagle.model.ea_model import EaModel
 from fastchat.model import get_conversation_template
+import Data
+import hashlib
 
-base_model_paths = ["lmsys/vicuna-13b-v1.3",
-                    "deepseek-ai/DeepSeek-R1-Distill-Llama-8B",
-                    "meta-llama/Llama-3.1-8B-Instruct",
-                    "meta-llama/Llama-3.3-70B-Instruct",
-                    "Qwen/Qwen3-1.7B"]
-
-EAGLE_model_paths = ["yuhuili/EAGLE3-Vicuna1.3-13B",
-                     "yuhuili/EAGLE3-DeepSeek-R1-Distill-LLaMA-8B",
-                     "yuhuili/EAGLE3-LLaMA3.1-Instruct-8B",
-                     "yuhuili/EAGLE3-LLaMA3.3-Instruct-70B",
-                     "AngelSlim/Qwen3-1.7B_eagle3"]
+base_model_paths = ["deepseek-ai/DeepSeek-R1-Distill-Llama-8B"]
+EAGLE_model_paths = ["yuhuili/EAGLE3-DeepSeek-R1-Distill-LLaMA-8B"]
 
 def template_getter(model_index):
     return base_model_paths[model_index]
-
 
 def model_init(model_index):
     # Below Code Block From: https://github.com/SafeAILab/EAGLE
@@ -39,13 +31,13 @@ def model_init(model_index):
     return model
 
 
-
-
-
-
+aai_ds = Data.aai_dataset()
 AAI_outputs = []
-models_to_test = [4]
+models_to_test = [0]
 translate = True
+test_runs = 1
+max_new_tokens = 128
+temp = 0.0
 
 print("\nEvaluation Settings Chosen:")
 print("Test Runs: ", test_runs)
@@ -61,7 +53,7 @@ for model_index in models_to_test:
     model = model_init(model_index)
     for test_run in range(test_runs):
         run = 1
-        for question in chinese_ds:
+        for question in aai_ds:
             print("Test Run: ", test_run)
             print("Test Question: ", run)
             run += 1
@@ -71,7 +63,7 @@ for model_index in models_to_test:
             # Below Code Block From: https://github.com/SafeAILab/EAGLE
             your_message = question
             if translate == True:
-                your_message = zh_to_en(your_message)
+                your_message = Data.zh_to_en(your_message)
             conv = get_conversation_template(template_getter(model_index))
             conv.append_message(conv.roles[0], your_message)
             conv.append_message(conv.roles[1], None)
@@ -84,10 +76,10 @@ for model_index in models_to_test:
 
             if translate == True:
                 # Below Code Line From: https://github.com/SafeAILab/EAGLE
-                aai_output = en_to_zh(model.tokenizer.decode(output_ids[0]))
+                aai_output = Data.en_to_zh(model.tokenizer.decode(output_ids[0][0]))
             else:
                 # Below Code Line From: https://github.com/SafeAILab/EAGLE
-                aai_output = model.tokenizer.decode(output_ids[0])
+                aai_output = model.tokenizer.decode(output_ids[0][0])
 
             finish = time.perf_counter_ns()
             elapsed = finish - start
@@ -104,10 +96,11 @@ for model_index in models_to_test:
 
             # Below Code Block From: https://github.com/sgl-project/SpecForge/blob/main/scripts/prepare_data.py
             output = {
-                "id": run,
+                "id": hashlib.md5((question + aai_output).encode()).hexdigest(),
                 "output": aai_output
             }
             AAI_outputs.append(output)
+
 
     # Print AAI Dataset Results
     print(f"AAI Results for {base_model_paths[model_index]}:")
@@ -117,6 +110,8 @@ for model_index in models_to_test:
 
 
 # Below Code Block From: https://github.com/sgl-project/SpecForge/blob/main/scripts/prepare_data.py
-with open("AAI_output.jsonl", "w") as f:
+with open(f"AAI_output_{translate}_{base_model_paths[model_index]}.jsonl", "w") as f:
     for output in AAI_outputs:
         f.write(json.dumps(output) + "\n")
+
+print("\n\n*******************************\nFinished Running AAI_Test.py\n\n")

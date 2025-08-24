@@ -12,10 +12,10 @@ def specbench():
 def aai_dataset():
     # Chinese (AAI) Dataset
     # Reference for below line: https://huggingface.co/datasets/PKU-Alignment/Align-Anything-Instruction-100K-zh
-    chinese_ds = load_dataset("PKU-Alignment/Align-Anything-Instruction-100K-zh", split="test")["prompt"]
+    aai_ds = load_dataset("PKU-Alignment/Align-Anything-Instruction-100K-zh", split="test")["prompt"]
     # Reference for above link
 
-    return chinese_ds
+    return aai_ds
 
 
 def longbench_e():
