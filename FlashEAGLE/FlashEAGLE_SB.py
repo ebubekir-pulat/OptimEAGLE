@@ -1,7 +1,7 @@
 print("\n\n*******************************\nStarting FlashEAGLE_SB.py\n\n")
 
 import nltk
-from datasets import load_dataset
+
 import pandas as pd    
 import time
 import numpy as np
@@ -97,10 +97,7 @@ def rank_retrieve(context, question):
     return return_context
 # Note: Reference for ranked retrieval, and NLTK
 
-# Getting Spec-Bench Questions
-# Below line from: https://stackoverflow.com/questions/50475635/loading-jsonl-file-as-json-objects
-jsonObj = pd.read_json(path_or_buf='../question.jsonl', lines=True)
-sb_prompts = [jsonObj.at[i, 'turns'] for i in range(len(jsonObj))]
+
 
 base_model_paths = ["lmsys/vicuna-13b-v1.3",
                     "deepseek-ai/DeepSeek-R1-Distill-Llama-8B",
@@ -213,12 +210,8 @@ with open("SB_output.jsonl", "w") as f:
         f.write(json.dumps(output) + "\n")
 # Reference for above link
 
-# ***
 
-# Chinese (AAI) Dataset
-# Reference for below line: https://huggingface.co/datasets/PKU-Alignment/Align-Anything-Instruction-100K-zh
-chinese_ds = load_dataset("PKU-Alignment/Align-Anything-Instruction-100K-zh", split="test")["prompt"]
-# Reference for above link
+
 
 AAI_outputs = []
 models_to_test = [4]
@@ -299,37 +292,7 @@ with open("AAI_output.jsonl", "w") as f:
         f.write(json.dumps(output) + "\n")
 
 
-# *** LongBench-E ***
-# Note - Reference LongBench-E in reference list
-# Getting LongBench-E Questions
-lb_prompts = []
 
-# Reference for below code block: https://www.w3schools.com/python/ref_list_sort.asp
-def sort_func(row):
-    return len(row[0])
-
-# Reference for Below Code Block: https://huggingface.co/datasets/THUDM/LongBench 
-datasets = ["qasper", "multifieldqa_en", "hotpotqa", "2wikimqa", "gov_report", "multi_news", "trec", \
-            "triviaqa", "samsum", "passage_count", "passage_retrieval_en", "lcc", "repobench-p"]
-for dataset in datasets:
-    data = load_dataset('THUDM/LongBench', f"{dataset}_e", split='test')
-    all_lb_prompts = []
-
-    for i in range(len(data)):
-        if data[i]["language"] != "zh":
-            prompt = [data[i]["context"], data[i]["input"]]
-            all_lb_prompts.append(prompt)
-    
-    # Reference for below code line: https://www.w3schools.com/python/ref_list_sort.asp
-    all_lb_prompts.sort(key=sort_func)
-    counter = 0
-
-    for i in range(0, len(all_lb_prompts), 16):
-        if counter == 15:
-            break
-
-        lb_prompts.append(all_lb_prompts[i])
-        counter += 1
 
 LB_outputs = []
 models_to_test = [4]
