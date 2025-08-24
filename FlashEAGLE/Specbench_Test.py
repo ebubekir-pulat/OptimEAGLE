@@ -1,4 +1,4 @@
-print("\n\n*******************************\nStarting FlashEAGLE_SB.py\n\n")
+print("\n\n*******************************\nStarting Specbench_Test.py\n\n")
 
 import time
 import numpy as np
@@ -6,26 +6,14 @@ import torch
 import json
 from eagle.model.ea_model import EaModel
 from fastchat.model import get_conversation_template
+import Data
+import hashlib
 
-base_model_paths = ["lmsys/vicuna-13b-v1.3",
-                    "deepseek-ai/DeepSeek-R1-Distill-Llama-8B",
-                    "meta-llama/Llama-3.1-8B-Instruct",
-                    "meta-llama/Llama-3.3-70B-Instruct",
-                    "Qwen/Qwen3-1.7B"]
-
-EAGLE_model_paths = ["yuhuili/EAGLE3-Vicuna1.3-13B",
-                     "yuhuili/EAGLE3-DeepSeek-R1-Distill-LLaMA-8B",
-                     "yuhuili/EAGLE3-LLaMA3.1-Instruct-8B",
-                     "yuhuili/EAGLE3-LLaMA3.3-Instruct-70B",
-                     "AngelSlim/Qwen3-1.7B_eagle3"]
-
-# Note: Reference for Qwen3: https://huggingface.co/Qwen/Qwen3-1.7B, https://huggingface.co/AngelSlim/Qwen3-1.7B_eagle3
+base_model_paths = ["meta-llama/Llama-3.1-8B-Instruct"]
+EAGLE_model_paths = ["yuhuili/EAGLE3-LLaMA3.1-Instruct-8B"]
 
 def template_getter(model_index):
-    if model_index == 0:
-        return "vicuna"
-    else:
-        return base_model_paths[model_index]
+    return base_model_paths[model_index]
 
 def model_init(model_index):
     # Below Code Block From: https://github.com/SafeAILab/EAGLE
@@ -42,8 +30,10 @@ def model_init(model_index):
     model.eval()
     return model
 
+sb_prompts = Data.specbench()
+
 # Preparing for assessment
-models_to_test = [4]
+models_to_test = [0]
 test_runs = 1
 max_new_tokens = 128
 temp = 0.0
@@ -83,7 +73,7 @@ for model_index in models_to_test:
 
                 # Below Code Block From: https://github.com/SafeAILab/EAGLE
                 output_ids = model.eagenerate(input_ids, temperature=temp, max_new_tokens=max_new_tokens, log=True)
-                SB_output = model.tokenizer.decode(output_ids[0])
+                SB_output = model.tokenizer.decode(output_ids[0][0])
 
                 finish = time.perf_counter_ns()
                 elapsed = finish - start
@@ -100,7 +90,7 @@ for model_index in models_to_test:
 
                 # Below Code Block From: https://github.com/sgl-project/SpecForge/blob/main/scripts/prepare_data.py
                 output = {
-                    "id": run,
+                    "id": hashlib.md5((question + SB_output).encode()).hexdigest(),
                     "output": SB_output
                 }
                 SB_outputs.append(output)
@@ -113,12 +103,12 @@ for model_index in models_to_test:
 
 
 # Below Code Block From: https://github.com/sgl-project/SpecForge/blob/main/scripts/prepare_data.py
-with open("SB_output.jsonl", "w") as f:
+with open(f"SB_output_{base_model_paths[model_index]}.jsonl", "w") as f:
     for output in SB_outputs:
         f.write(json.dumps(output) + "\n")
 # Reference for above link
 
-
+print("\n\n*******************************\nFinished Running Specbench_Test.py\n\n")
 
 '''
 References
@@ -223,5 +213,3 @@ models,” 2024. [Online]. Available: https://arxiv.org/abs/2407.21783
 Available: https://arxiv.org/abs/2501.12948
 
 '''
-
-print("\n\n*******************************\nFinished Running FlashEAGLE_SB.py\n\n")

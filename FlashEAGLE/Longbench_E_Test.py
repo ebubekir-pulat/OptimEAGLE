@@ -19,6 +19,9 @@ EAGLE_model_paths = ["yuhuili/EAGLE3-Vicuna1.3-13B",
                      "yuhuili/EAGLE3-LLaMA3.3-Instruct-70B",
                      "AngelSlim/Qwen3-1.7B_eagle3"]
 
+
+# Note: Reference for Qwen3: https://huggingface.co/Qwen/Qwen3-1.7B, https://huggingface.co/AngelSlim/Qwen3-1.7B_eagle3
+
 def template_getter(model_index):
     return base_model_paths[model_index]
 
