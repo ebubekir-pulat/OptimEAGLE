@@ -1,9 +1,12 @@
-print("\n\n*******************************\nStarting FlashEAGLE_GenData.py\n\n")
+print("\n\n*******************************\nStarting DataGeneration.py\n\n")
 
 import torch
-from eagle.model.ea_model import EaModel
-from fastchat.model import get_conversation_template
 from datasets import load_dataset
+from sglang.test.doc_patch import launch_server_cmd
+from sglang.utils import wait_for_server, terminate_process
+import openai
+import hashlib
+import json
 
 datasets = ['open-r1/OpenThoughts-114k-math',
             'shahules786/orca-chat',
@@ -31,79 +34,55 @@ if chosen_dataset == 1:
     instruction = ds["instruction"][start_index:]
     conversation = ds["conversation"][start_index:]
 
-base_model_paths = ["lmsys/vicuna-13b-v1.3",
-                    "deepseek-ai/DeepSeek-R1-Distill-Llama-8B",
-                    "meta-llama/Llama-3.1-8B-Instruct",
-                    "meta-llama/Llama-3.3-70B-Instruct",
-                    "Qwen/Qwen3-1.7B"]
 
-EAGLE_model_paths = ["yuhuili/EAGLE3-Vicuna1.3-13B",
-                     "yuhuili/EAGLE3-DeepSeek-R1-Distill-LLaMA-8B",
-                     "yuhuili/EAGLE3-LLaMA3.1-Instruct-8B",
-                     "yuhuili/EAGLE3-LLaMA3.3-Instruct-70B",
-                     "AngelSlim/Qwen3-1.7B_eagle3"]
+base_model_paths = ["Qwen/Qwen3-1.7B"]
+EAGLE_model_paths = ["AngelSlim/Qwen3-1.7B_eagle3"]
+# Note: Reference for Qwen3: https://huggingface.co/Qwen/Qwen3-1.7B, https://huggingface.co/AngelSlim/Qwen3-1.7B_eagle3
+models_to_test = [0]
 
-def template_getter(model_index):
-    if model_index == 0:
-        return "vicuna"
-    else:
-        return base_model_paths[model_index]
+# Preparing SGLANG with EAGLE3
+# Below Code Block From: https://docs.sglang.ai/advanced_features/speculative_decoding.html
+server_process, port = launch_server_cmd(
+    f"""
+python3 -m sglang.launch_server --model {base_model_paths[models_to_test]}  --speculative-algorithm EAGLE3 \
+    --speculative-draft-model-path {EAGLE_model_paths[models_to_test]} --speculative-num-steps 5 \
+        --speculative-eagle-topk 8 --speculative-num-draft-tokens 32 --mem-fraction 0.6 \
+        --cuda-graph-max-bs 2 --dtype float16
+"""
+)
+wait_for_server(f"http://localhost:{port}")
+client = openai.Client(base_url=f"http://127.0.0.1:{port}/v1", api_key="None")
 
-def model_init(model_index):
-    # Below Code Block From: https://github.com/SafeAILab/EAGLE
-    model = EaModel.from_pretrained(
-        base_model_path=base_model_paths[model_index],
-        ea_model_path=EAGLE_model_paths[model_index],
-        torch_dtype=torch.float16,
-        device_map="auto",
-        attn_implementation="flash_attention_2",
-        trust_remote_code=True
-    )
-
-    # Below Code Line From: https://github.com/SafeAILab/EAGLE
-    model.eval()
-    return model
 
 # Preparing for assessment
-models_to_test = [4]
 max_new_tokens = 2048
 temp = 0.0
+outputs = []
 
 print("\nGeneration Settings Chosen:")
 print("Dataset: ", datasets[chosen_dataset])
 print("Max New Tokens: ", max_new_tokens)
-print("Temperature: ", temp, "\n")
-
-outputs = []
-
-import hashlib, json
+print("Temperature: ", temp)
+print("Model: ", EAGLE_model_paths[models_to_test], "\n")
 
 # Generation Loop
 for model_index in models_to_test:
-    model = model_init(model_index)
 
     if chosen_dataset != 1:
         for question in ds:
-            # Below Code Block From: https://github.com/SafeAILab/EAGLE
-            your_message = question
-            conv = get_conversation_template(template_getter(model_index))
-            conv.append_message(conv.roles[0], your_message)
-            conv.append_message(conv.roles[1], None)
-            prompt = conv.get_prompt()
-            input_ids = model.tokenizer([prompt]).input_ids
-            input_ids = torch.as_tensor(input_ids).cuda()
-
-            # Below Code Block From: https://github.com/SafeAILab/EAGLE
-            output_ids = model.eagenerate(input_ids, temperature=temp, max_new_tokens=len(prompt)+max_new_tokens, log=True)
-            generated_data=model.tokenizer.decode(output_ids[0][0])
-
-            response_index = generated_data.find("### Assistant: ", 300) + len("### Assistant: ")
-            generated_data = generated_data[response_index:]
-            generated_data = generated_data[:generated_data.find("### Human:")]
-            generated_data = generated_data.strip()
             
-            #print("\n\n*********************************************\nPrompt: ", question)
-            #print("\nResponse: ", generated_data)
+            # Below Code Block From: https://docs.sglang.ai/advanced_features/speculative_decoding.html
+            response = client.chat.completions.create(
+                model=base_model_paths[models_to_test],
+                messages=[
+                    {"role": "user", "content": question},
+                ],
+                temperature=0,
+                max_tokens=max_new_tokens,
+            )
+
+            # Reference for below code line: https://stackoverflow.com/questions/77444332/openai-python-package-error-chatcompletion-object-is-not-subscriptable 
+            generated_data = response.choices[0].message.content
            
             # Below Code Block From: https://github.com/sgl-project/SpecForge/blob/main/scripts/prepare_data.py
             row_id = hashlib.md5((question + generated_data).encode()).hexdigest()
@@ -117,34 +96,28 @@ for model_index in models_to_test:
             outputs.append(output)
     else:
         for i in range(len(instruction)):
-            for j in range(len(conversation[i])):
-                # Below Code Block From: https://github.com/SafeAILab/EAGLE
-                your_message = instruction[i] + "\n" + conversation[i][j]["input"]
-                conv = get_conversation_template(template_getter(model_index))
-                conv.append_message(conv.roles[0], your_message)
-                conv.append_message(conv.roles[1], None)
-                prompt = conv.get_prompt()
-                input_ids = model.tokenizer([prompt]).input_ids
-                input_ids = torch.as_tensor(input_ids).cuda()
-
-                # Below Code Block From: https://github.com/SafeAILab/EAGLE
-                output_ids = model.eagenerate(input_ids, temperature=temp, max_new_tokens=len(prompt)+max_new_tokens, log=True)
-                generated_data=model.tokenizer.decode(output_ids[0][0])
-
-                response_index = generated_data.find("### Assistant: ", 300) + len("### Assistant: ")
-                generated_data = generated_data[response_index:]
-                generated_data = generated_data[:generated_data.find("### Human:")]
-                generated_data = generated_data.strip()
+            for j in range(len(conversation[i])):                
+                question = instruction[i] + "\n" + conversation[i][j]["input"]
                 
-                #print("\n\n*********************************************\nPrompt: ", your_message)
-                #print("\nResponse: ", generated_data)
+                # Below Code Block From: https://docs.sglang.ai/advanced_features/speculative_decoding.html
+                response = client.chat.completions.create(
+                    model=base_model_paths[models_to_test],
+                    messages=[
+                        {"role": "user", "content": question},
+                    ],
+                    temperature=0,
+                    max_tokens=max_new_tokens,
+                )
+
+                # Reference for below code line: https://stackoverflow.com/questions/77444332/openai-python-package-error-chatcompletion-object-is-not-subscriptable 
+                generated_data = response.choices[0].message.content
 
                 # Below Code Block From: https://github.com/sgl-project/SpecForge/blob/main/scripts/prepare_data.py
-                row_id = hashlib.md5((your_message + generated_data).encode()).hexdigest()
+                row_id = hashlib.md5((question + generated_data).encode()).hexdigest()
                 output = {
                     "id": row_id,
                     "conversations": [
-                        {"role": "user", "content": your_message},
+                        {"role": "user", "content": question},
                         {"role": "assistant", "content": generated_data},
                     ],
                 }
@@ -152,9 +125,23 @@ for model_index in models_to_test:
 
 
 # Below Code Block From: https://github.com/sgl-project/SpecForge/blob/main/scripts/prepare_data.py
-with open(datasets[chosen_dataset]+"_gen.jsonl", "w") as f:
+with open(f"{datasets[chosen_dataset]}_{EAGLE_model_paths[models_to_test]}_gen.jsonl", "w") as f:
     for output in outputs:
         f.write(json.dumps(output) + "\n")
+
+
+'''
+Dump:
+
+response_index = generated_data.find("### Assistant: ", 300) + len("### Assistant: ")
+            generated_data = generated_data[response_index:]
+            generated_data = generated_data[:generated_data.find("### Human:")]
+            generated_data = generated_data.strip()
+            
+            #print("\n\n*********************************************\nPrompt: ", question)
+            #print("\nResponse: ", generated_data)
+
+'''
 
 
 '''

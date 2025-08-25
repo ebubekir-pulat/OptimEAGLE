@@ -17,7 +17,6 @@ EAGLE_model_paths = ["AngelSlim/Qwen3-1.7B_eagle3"]
 models_to_test = [0]
 lb_prompts = Data.longbench_e()
 
-
 # Preparing SGLANG with EAGLE3
 # Below Code Block From: https://docs.sglang.ai/advanced_features/speculative_decoding.html
 server_process, port = launch_server_cmd(
