@@ -108,9 +108,13 @@ for model_index in models_to_test:
     print("Mean Tokens Generated/s: ", np.mean(token_rates))
     print("Average Acceptance Length: ", np.mean(avg_accept_lens))
 
+translate_tag = ""
+
+if translate == True:
+    translate_tag = "_translate"
 
 # Below Code Block From: https://github.com/sgl-project/SpecForge/blob/main/scripts/prepare_data.py
-with open(f"AAI_output_{translate}_{EAGLE_model_paths[model_index]}.jsonl", "w") as f:
+with open(f"AAI_output{translate_tag}_{EAGLE_model_paths[model_index]}.jsonl", "w") as f:
     for output in AAI_outputs:
         f.write(json.dumps(output) + "\n")
 
