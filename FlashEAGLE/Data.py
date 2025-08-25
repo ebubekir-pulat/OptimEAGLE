@@ -50,3 +50,5 @@ def longbench_e():
 
             lb_prompts.append(all_lb_prompts[i])
             counter += 1
+        
+    return lb_prompts

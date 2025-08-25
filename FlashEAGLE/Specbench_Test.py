@@ -103,7 +103,7 @@ for model_index in models_to_test:
 
 
 # Below Code Block From: https://github.com/sgl-project/SpecForge/blob/main/scripts/prepare_data.py
-with open(f"SB_output_{base_model_paths[model_index]}.jsonl", "w") as f:
+with open(f"SB_output_{EAGLE_model_paths[model_index]}.jsonl", "w") as f:
     for output in SB_outputs:
         f.write(json.dumps(output) + "\n")
 # Reference for above link

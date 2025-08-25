@@ -57,7 +57,7 @@ def format_instruction(instruction, query, doc):
     return output
 
 # Code in below function from: https://huggingface.co/tomaarsen/Qwen3-Reranker-0.6B-seq-cls
-def rank_retrieve(context, question):
+def ranked_retrieve(context, question):
     max_length = 128 * 1024
     task = "Given a web search query, retrieve relevant passages that answer the query"
     context_sentences = nltk.tokenize.sent_tokenize(context, language='english')
