@@ -90,8 +90,8 @@ for model_index in models_to_test:
 
                 # Below Code Block From: https://github.com/sgl-project/SpecForge/blob/main/scripts/prepare_data.py
                 output = {
-                    "id": hashlib.md5((question + SB_output).encode()).hexdigest(),
-                    "output": SB_output
+                    "id": hashlib.md5((question + Data.extract_response(SB_output)).encode()).hexdigest(),
+                    "output": Data.extract_response(SB_output)
                 }
                 SB_outputs.append(output)
 

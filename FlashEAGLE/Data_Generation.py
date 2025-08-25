@@ -131,20 +131,6 @@ with open(f"{datasets[chosen_dataset]}_{EAGLE_model_paths[models_to_test]}_gen.j
 
 
 '''
-Dump:
-
-response_index = generated_data.find("### Assistant: ", 300) + len("### Assistant: ")
-            generated_data = generated_data[response_index:]
-            generated_data = generated_data[:generated_data.find("### Human:")]
-            generated_data = generated_data.strip()
-            
-            #print("\n\n*********************************************\nPrompt: ", question)
-            #print("\nResponse: ", generated_data)
-
-'''
-
-
-'''
 References
 
 1. H. Xia, Z. Yang, Q. Dong, P. Wang, Y. Li, T. Ge, T. Liu, W. Li, and Z. Sui, “Unlocking efficiency in large

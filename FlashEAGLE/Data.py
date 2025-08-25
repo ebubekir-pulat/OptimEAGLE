@@ -52,3 +52,13 @@ def longbench_e():
             counter += 1
         
     return lb_prompts
+
+
+def extract_response(model_output):
+    response_index = model_output.find("### Assistant: ", 300) + len("### Assistant: ")
+    model_output = model_output[response_index:]
+    model_output = model_output[:model_output.find("### Human:")]
+    model_output = model_output.strip()
+    
+    #print("\n\n*********************************************\nPrompt: ", question)
+    #print("\nResponse: ", model_output)
