@@ -60,11 +60,11 @@ for model_index in models_to_test:
 
             start = time.perf_counter_ns()
 
-            prompt = lb_prompts[i][0] + "\n\n" + lb_prompts[i][1]
+            prompt = lb_prompts[i][0] + "\n" + lb_prompts[i][1]
             if summarise == True:
-                your_message = Context.summarise_question(lb_prompts[i][0] + "\n\n" + lb_prompts[i][1])
+                prompt = Context.summarise_question(lb_prompts[i][0] + "\n" + lb_prompts[i][1])
             elif ranked_retrieve == True:
-                your_message = Context.ranked_retrieve(lb_prompts[i][0], lb_prompts[i][1]) + "\n\n" + lb_prompts[i][1]
+                prompt = Context.ranked_retrieve(lb_prompts[i][0], lb_prompts[i][1]) + "\n" + lb_prompts[i][1]
             
             # Below Code Block From: https://docs.sglang.ai/advanced_features/speculative_decoding.html
             response = client.chat.completions.create(
@@ -72,7 +72,7 @@ for model_index in models_to_test:
                 messages=[
                     {"role": "user", "content": prompt},
                 ],
-                temperature=0,
+                temperature=temp,
                 max_tokens=max_new_tokens,
             )
 
@@ -100,7 +100,7 @@ for model_index in models_to_test:
             LB_outputs.append(output)
 
     # Print LongBench-E Results
-    print(f"LongBench-E Results for {base_model_paths[model_index]}:")
+    print(f"LongBench-E Results for {EAGLE_model_paths[model_index]}:")
     print("Mean Wall Time (ns): ", np.mean(wall_times))
     #print("Mean Tokens Generated/s: ", np.mean(token_rates))
     #print("Average Acceptance Length: ", np.mean(avg_accept_lens))
@@ -111,12 +111,12 @@ terminate_process(server_process)
 compression_tag = ""
 
 if summarise == True:
-    compression_tag = "_summ"
+    compression_tag = "_Summ"
 elif ranked_retrieve == True:
-    compression_tag == "_rr"
+    compression_tag == "_RR"
 
 # Below Code Block From: https://github.com/sgl-project/SpecForge/blob/main/scripts/prepare_data.py
-with open(f"LBE_output_{EAGLE_model_paths[models_to_test]}{compression_tag}.jsonl", "w") as f:
+with open(f"LBE_Output_{EAGLE_model_paths[models_to_test]}{compression_tag}.jsonl", "w") as f:
     for output in LB_outputs:
         f.write(json.dumps(output) + "\n")
 
