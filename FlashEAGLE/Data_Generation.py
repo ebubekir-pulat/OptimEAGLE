@@ -1,6 +1,5 @@
 print("\n\n*******************************\nStarting DataGeneration.py\n\n")
 
-import torch
 from datasets import load_dataset
 from sglang.test.doc_patch import launch_server_cmd
 from sglang.utils import wait_for_server, terminate_process
@@ -53,9 +52,8 @@ python3 -m sglang.launch_server --model {base_model_paths[models_to_test]}  --sp
 wait_for_server(f"http://localhost:{port}")
 client = openai.Client(base_url=f"http://127.0.0.1:{port}/v1", api_key="None")
 
-
 # Preparing for assessment
-max_new_tokens = 2048
+max_new_tokens = 32 * 1024
 temp = 0.0
 outputs = []
 
@@ -77,7 +75,7 @@ for model_index in models_to_test:
                 messages=[
                     {"role": "user", "content": question},
                 ],
-                temperature=0,
+                temperature=temp,
                 max_tokens=max_new_tokens,
             )
 
@@ -105,7 +103,7 @@ for model_index in models_to_test:
                     messages=[
                         {"role": "user", "content": question},
                     ],
-                    temperature=0,
+                    temperature=temp,
                     max_tokens=max_new_tokens,
                 )
 
@@ -123,9 +121,11 @@ for model_index in models_to_test:
                 }
                 outputs.append(output)
 
+# Below Code Line From: https://docs.sglang.ai/advanced_features/speculative_decoding.html
+terminate_process(server_process)
 
 # Below Code Block From: https://github.com/sgl-project/SpecForge/blob/main/scripts/prepare_data.py
-with open(f"{datasets[chosen_dataset]}_{EAGLE_model_paths[models_to_test]}_gen.jsonl", "w") as f:
+with open(f"{datasets[chosen_dataset]}_{EAGLE_model_paths[models_to_test]}_Gen.jsonl", "w") as f:
     for output in outputs:
         f.write(json.dumps(output) + "\n")
 

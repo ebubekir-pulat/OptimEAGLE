@@ -3,7 +3,6 @@ import nltk
 import torch
 import numpy as np
 
-
 # Preparing Translater
 # Reference for below code block: https://huggingface.co/utrobinmv/t5_translate_en_ru_zh_small_1024 
 model_name = 'utrobinmv/t5_translate_en_ru_zh_small_1024'
