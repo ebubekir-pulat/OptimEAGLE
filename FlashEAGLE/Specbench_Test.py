@@ -96,14 +96,14 @@ for model_index in models_to_test:
                 SB_outputs.append(output)
 
     # Print Spec-Bench Results
-    print(f"Spec-Bench Results for {base_model_paths[model_index]}:")
+    print(f"Spec-Bench Results for {EAGLE_model_paths[model_index]}:")
     print("Mean Wall Time (ns): ", np.mean(wall_times))
     print("Mean Tokens Generated/s: ", np.mean(token_rates))
     print("Average Acceptance Length: ", np.mean(avg_accept_lens))
 
 
 # Below Code Block From: https://github.com/sgl-project/SpecForge/blob/main/scripts/prepare_data.py
-with open(f"SB_output_{EAGLE_model_paths[model_index]}.jsonl", "w") as f:
+with open(f"SB_Output_{EAGLE_model_paths[model_index]}.jsonl", "w") as f:
     for output in SB_outputs:
         f.write(json.dumps(output) + "\n")
 # Reference for above link

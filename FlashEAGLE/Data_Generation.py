@@ -1,4 +1,4 @@
-print("\n\n*******************************\nStarting DataGeneration.py\n\n")
+print("\n\n*******************************\nStarting Data_Generation.py\n\n")
 
 from datasets import load_dataset
 from sglang.test.doc_patch import launch_server_cmd
@@ -234,4 +234,4 @@ Available: https://arxiv.org/abs/2501.12948
 
 '''
 
-print("\n\n*******************************\nFinished Running FlashEAGLE_GenData.py\n\n")
+print("\n\n*******************************\nFinished Running Data_Generation.py\n\n")
