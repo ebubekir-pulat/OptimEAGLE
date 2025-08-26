@@ -59,6 +59,7 @@ def extract_response(model_output):
     model_output = model_output[response_index:]
     model_output = model_output[:model_output.find("### Human:")]
     model_output = model_output.strip()
+    return model_output
     
     #print("\n\n*********************************************\nPrompt: ", question)
     #print("\nResponse: ", model_output)
