@@ -7,7 +7,7 @@ from sglang.test.doc_patch import launch_server_cmd
 from sglang.utils import wait_for_server, terminate_process
 import openai
 import Data
-import Context
+import Compress
 import hashlib
 
 base_model_paths = ["Qwen/Qwen3-1.7B"]
@@ -62,9 +62,9 @@ for model_index in models_to_test:
 
             prompt = lb_prompts[i][0] + "\n" + lb_prompts[i][1]
             if summarise == True:
-                prompt = Context.summarise_question(lb_prompts[i][0] + "\n" + lb_prompts[i][1])
+                prompt = Compress.summarise_question(lb_prompts[i][0] + "\n" + lb_prompts[i][1])
             elif ranked_retrieve == True:
-                prompt = Context.ranked_retrieve(lb_prompts[i][0], lb_prompts[i][1]) + "\n" + lb_prompts[i][1]
+                prompt = Compress.ranked_retrieve(lb_prompts[i][0], lb_prompts[i][1]) + "\n" + lb_prompts[i][1]
             
             # Below Code Block From: https://docs.sglang.ai/advanced_features/speculative_decoding.html
             response = client.chat.completions.create(

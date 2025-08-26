@@ -8,6 +8,7 @@ from eagle.model.ea_model import EaModel
 from fastchat.model import get_conversation_template
 import Data
 import hashlib
+import Compress
 
 base_model_paths = ["deepseek-ai/DeepSeek-R1-Distill-Llama-8B"]
 EAGLE_model_paths = ["yuhuili/EAGLE3-DeepSeek-R1-Distill-LLaMA-8B"]
@@ -63,7 +64,7 @@ for model_index in models_to_test:
             # Below Code Block From: https://github.com/SafeAILab/EAGLE
             your_message = question
             if translate == True:
-                your_message = Data.zh_to_en(your_message)
+                your_message = Compress.zh_to_en(your_message)
             conv = get_conversation_template(template_getter(model_index))
             conv.append_message(conv.roles[0], your_message)
             conv.append_message(conv.roles[1], None)
@@ -76,7 +77,7 @@ for model_index in models_to_test:
 
             if translate == True:
                 # Below Code Line From: https://github.com/SafeAILab/EAGLE
-                aai_output = Data.en_to_zh(model.tokenizer.decode(output_ids[0][0]))
+                aai_output = Compress.en_to_zh(model.tokenizer.decode(output_ids[0][0]))
             else:
                 # Below Code Line From: https://github.com/SafeAILab/EAGLE
                 aai_output = model.tokenizer.decode(output_ids[0][0])
