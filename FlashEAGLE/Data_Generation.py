@@ -37,14 +37,13 @@ if chosen_dataset == 1:
 base_model_paths = ["Qwen/Qwen3-1.7B"]
 EAGLE_model_paths = ["AngelSlim/Qwen3-1.7B_eagle3"]
 # Note: Reference for Qwen3: https://huggingface.co/Qwen/Qwen3-1.7B, https://huggingface.co/AngelSlim/Qwen3-1.7B_eagle3
-models_to_test = [0]
 
 # Preparing SGLANG with EAGLE3
 # Below Code Block From: https://docs.sglang.ai/advanced_features/speculative_decoding.html
 server_process, port = launch_server_cmd(
     f"""
-python3 -m sglang.launch_server --model {base_model_paths[models_to_test]}  --speculative-algorithm EAGLE3 \
-    --speculative-draft-model-path {EAGLE_model_paths[models_to_test]} --speculative-num-steps 5 \
+python3 -m sglang.launch_server --model {base_model_paths[0]}  --speculative-algorithm EAGLE3 \
+    --speculative-draft-model-path {EAGLE_model_paths[0]} --speculative-num-steps 5 \
         --speculative-eagle-topk 8 --speculative-num-draft-tokens 32 --mem-fraction 0.6 \
         --cuda-graph-max-bs 2 --dtype float16
 """
@@ -61,17 +60,43 @@ print("\nGeneration Settings Chosen:")
 print("Dataset: ", datasets[chosen_dataset])
 print("Max New Tokens: ", max_new_tokens)
 print("Temperature: ", temp)
-print("Model: ", EAGLE_model_paths[models_to_test], "\n")
+print("Model: ", EAGLE_model_paths[0], "\n")
 
-# Generation Loop
-for model_index in models_to_test:
+# Generation
+if chosen_dataset != 1:
+    for question in ds:
+        
+        # Below Code Block From: https://docs.sglang.ai/advanced_features/speculative_decoding.html
+        response = client.chat.completions.create(
+            model=base_model_paths[0],
+            messages=[
+                {"role": "user", "content": question},
+            ],
+            temperature=temp,
+            max_tokens=max_new_tokens,
+        )
 
-    if chosen_dataset != 1:
-        for question in ds:
+        # Reference for below code line: https://stackoverflow.com/questions/77444332/openai-python-package-error-chatcompletion-object-is-not-subscriptable 
+        generated_data = response.choices[0].message.content
+        
+        # Below Code Block From: https://github.com/sgl-project/SpecForge/blob/main/scripts/prepare_data.py
+        row_id = hashlib.md5((question + generated_data).encode()).hexdigest()
+        output = {
+            "id": row_id,
+            "conversations": [
+                {"role": "user", "content": question},
+                {"role": "assistant", "content": generated_data},
+            ],
+        }
+        outputs.append(output)
+else:
+    for i in range(len(instruction)):
+        for j in range(len(conversation[i])):                
+            question = instruction[i] + "\n" + conversation[i][j]["input"]
             
             # Below Code Block From: https://docs.sglang.ai/advanced_features/speculative_decoding.html
             response = client.chat.completions.create(
-                model=base_model_paths[models_to_test],
+                model=base_model_paths[0],
                 messages=[
                     {"role": "user", "content": question},
                 ],
@@ -81,7 +106,7 @@ for model_index in models_to_test:
 
             # Reference for below code line: https://stackoverflow.com/questions/77444332/openai-python-package-error-chatcompletion-object-is-not-subscriptable 
             generated_data = response.choices[0].message.content
-           
+
             # Below Code Block From: https://github.com/sgl-project/SpecForge/blob/main/scripts/prepare_data.py
             row_id = hashlib.md5((question + generated_data).encode()).hexdigest()
             output = {
@@ -92,40 +117,12 @@ for model_index in models_to_test:
                 ],
             }
             outputs.append(output)
-    else:
-        for i in range(len(instruction)):
-            for j in range(len(conversation[i])):                
-                question = instruction[i] + "\n" + conversation[i][j]["input"]
-                
-                # Below Code Block From: https://docs.sglang.ai/advanced_features/speculative_decoding.html
-                response = client.chat.completions.create(
-                    model=base_model_paths[models_to_test],
-                    messages=[
-                        {"role": "user", "content": question},
-                    ],
-                    temperature=temp,
-                    max_tokens=max_new_tokens,
-                )
-
-                # Reference for below code line: https://stackoverflow.com/questions/77444332/openai-python-package-error-chatcompletion-object-is-not-subscriptable 
-                generated_data = response.choices[0].message.content
-
-                # Below Code Block From: https://github.com/sgl-project/SpecForge/blob/main/scripts/prepare_data.py
-                row_id = hashlib.md5((question + generated_data).encode()).hexdigest()
-                output = {
-                    "id": row_id,
-                    "conversations": [
-                        {"role": "user", "content": question},
-                        {"role": "assistant", "content": generated_data},
-                    ],
-                }
-                outputs.append(output)
 
 # Below Code Line From: https://docs.sglang.ai/advanced_features/speculative_decoding.html
 terminate_process(server_process)
 
 # Below Code Block From: https://github.com/sgl-project/SpecForge/blob/main/scripts/prepare_data.py
-with open(f"{datasets[chosen_dataset]}_{EAGLE_model_paths[models_to_test]}_Gen.jsonl", "w") as f:
+with open(f"{datasets[chosen_dataset]}_{EAGLE_model_paths[0]}_Gen.jsonl", "x") as f:
     for output in outputs:
         f.write(json.dumps(output) + "\n")
 

@@ -64,7 +64,7 @@ for model_index in models_to_test:
             # Below Code Block From: https://github.com/SafeAILab/EAGLE
             your_message = question
             if translate == True:
-                your_message = Compress.zh_to_en(your_message)
+                your_message = Compress.zh_to_en(your_message)[0]
             conv = get_conversation_template(template_getter(model_index))
             conv.append_message(conv.roles[0], your_message)
             conv.append_message(conv.roles[1], None)
@@ -77,7 +77,7 @@ for model_index in models_to_test:
 
             if translate == True:
                 # Below Code Line From: https://github.com/SafeAILab/EAGLE
-                aai_output = Compress.en_to_zh(model.tokenizer.decode(output_ids[0][0]))
+                aai_output = Compress.en_to_zh(model.tokenizer.decode(output_ids[0][0]))[0]
             else:
                 # Below Code Line From: https://github.com/SafeAILab/EAGLE
                 aai_output = model.tokenizer.decode(output_ids[0][0])
@@ -115,7 +115,7 @@ if translate == True:
     translate_tag = "_Translate"
 
 # Below Code Block From: https://github.com/sgl-project/SpecForge/blob/main/scripts/prepare_data.py
-with open(f"AAI_Output{translate_tag}_{EAGLE_model_paths[model_index]}.jsonl", "w") as f:
+with open(f"AAI_Output{translate_tag}_{EAGLE_model_paths[model_index]}.jsonl", "x") as f:
     for output in AAI_outputs:
         f.write(json.dumps(output) + "\n")
 
