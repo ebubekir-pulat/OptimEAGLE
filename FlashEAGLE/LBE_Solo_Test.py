@@ -10,7 +10,6 @@ import Data
 import Compress
 import hashlib
 
-base_model_paths = ["Qwen/Qwen3-1.7B"]
 EAGLE_model_paths = ["AngelSlim/Qwen3-1.7B_eagle3"]
 # Note: Reference for Qwen3: https://huggingface.co/Qwen/Qwen3-1.7B, https://huggingface.co/AngelSlim/Qwen3-1.7B_eagle3
 
@@ -21,7 +20,7 @@ lb_prompts = Data.longbench_e()
 # Below Code Block From: https://docs.sglang.ai/advanced_features/speculative_decoding.html
 server_process, port = launch_server_cmd(
     f"""
-python3 -m sglang.launch_server --model {EAGLE_model_paths[models_to_test]} \
+python3 -m sglang.launch_server --model {EAGLE_model_paths[0]} \
         --mem-fraction 0.6 \
         --cuda-graph-max-bs 2 --dtype float16
 """
@@ -67,7 +66,7 @@ for model_index in models_to_test:
             
             # Below Code Block From: https://docs.sglang.ai/advanced_features/speculative_decoding.html
             response = client.chat.completions.create(
-                model=EAGLE_model_paths[models_to_test],
+                model=EAGLE_model_paths[0],
                 messages=[
                     {"role": "user", "content": prompt},
                 ],
@@ -99,7 +98,7 @@ for model_index in models_to_test:
             LB_outputs.append(output)
 
     # Print LongBench-E Results
-    print(f"LongBench-E Results for {EAGLE_model_paths[model_index]}:")
+    print(f"LongBench-E Results for {EAGLE_model_paths[0]}:")
     print("Mean Wall Time (ns): ", np.mean(wall_times))
     #print("Mean Tokens Generated/s: ", np.mean(token_rates))
     #print("Average Acceptance Length: ", np.mean(avg_accept_lens))
@@ -115,12 +114,12 @@ elif ranked_retrieve == True:
     compression_tag == "_RR"
 
 # Below Code Block From: https://github.com/sgl-project/SpecForge/blob/main/scripts/prepare_data.py
-with open(f"LBE_Output_{EAGLE_model_paths[models_to_test]}{compression_tag}.jsonl", "w") as f:
+with open(f"LBE_Solo_Output_{EAGLE_model_paths[0]}{compression_tag}.jsonl", "w") as f:
     for output in LB_outputs:
         f.write(json.dumps(output) + "\n")
 
 
-print("\n\n*******************************\nFinished Running Longbench_E_Test.py\n\n")
+print("\n\n*******************************\nFinished Running LBE_Solo_Test.py\n\n")
 
 ''' 
 References
