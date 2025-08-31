@@ -1,4 +1,4 @@
-print("\n\n*******************************\nStarting LBE_Solo_Test.py\n\n")
+print("\n\n*******************************\nStarting Longbench_E_Test.py\n\n")
 
 import time
 import numpy as np
@@ -9,25 +9,44 @@ import openai
 import Data
 import Compress
 import hashlib
+from threading import Lock
+import threading
 
+input_buffer = []
+input_lock = Lock()
+
+base_model_paths = ["Qwen/Qwen3-1.7B"]
 EAGLE_model_paths = ["AngelSlim/Qwen3-1.7B_eagle3"]
 # Note: Reference for Qwen3: https://huggingface.co/Qwen/Qwen3-1.7B, https://huggingface.co/AngelSlim/Qwen3-1.7B_eagle3
 
 models_to_test = [0]
-lb_prompts = Data.longbench_e()
+original_lb_prompts = Data.longbench_e()
+num_prompts = len(original_lb_prompts)
 
 # Preparing SGLANG with EAGLE3
 # Below Code Block From: https://docs.sglang.ai/advanced_features/speculative_decoding.html
 server_process, port = launch_server_cmd(
     f"""
-python3 -m sglang.launch_server --model {EAGLE_model_paths[0]} \
-        --mem-fraction 0.6 \
+python3 -m sglang.launch_server --model {base_model_paths[0]}  --speculative-algorithm EAGLE3 \
+    --speculative-draft-model-path {EAGLE_model_paths[0]} --speculative-num-steps 5 \
+        --speculative-eagle-topk 8 --speculative-num-draft-tokens 32 --mem-fraction 0.6 \
         --cuda-graph-max-bs 2 --dtype float16
 """
 )
 wait_for_server(f"http://localhost:{port}")
 client = openai.Client(base_url=f"http://127.0.0.1:{port}/v1", api_key="None")
 
+lb_prompts = []
+
+def prepare_inputs(summarise, ranked_retrieve):
+    while len(original_lb_prompts) > 0:
+        lb_prompt = original_lb_prompts.pop(0)
+        if summarise:
+            lb_prompt = Compress.summarise_question(lb_prompt[0] + "\n" + lb_prompt[1])
+        elif ranked_retrieve:
+            lb_prompt = Compress.ranked_retrieve(lb_prompt[0], lb_prompt[1]) + "\n" + lb_prompt[1]
+
+        lb_prompts.append(lb_prompt)
 
 LB_outputs = []
 summarise = True
@@ -35,6 +54,13 @@ ranked_retrieve = False
 test_runs = 1
 max_new_tokens = 128
 temp = 0.0
+
+if (summarise or ranked_retrieve) == False:
+    lb_prompts = original_lb_prompts
+else:
+    # Reference for below 2 code lines: https://www.geeksforgeeks.org/python/multithreading-python-set-1/
+    inputs_thread = threading.Thread(prepare_inputs, args=[summarise, ranked_retrieve])
+    inputs_thread.start()
 
 print("\nEvaluation Settings Chosen:")
 print("Test Runs: ", test_runs)
@@ -51,22 +77,20 @@ for model_index in models_to_test:
     
     for test_run in range(test_runs):
         run = 1
-        for i in range(len(lb_prompts)):
+        for i in range(num_prompts):
             print("Test Run: ", test_run)
             print("Test Question: ", run)
             run += 1
 
             start = time.perf_counter_ns()
 
-            prompt = lb_prompts[i][0] + "\n" + lb_prompts[i][1]
-            if summarise == True:
-                prompt = Compress.summarise_question(lb_prompts[i][0] + "\n" + lb_prompts[i][1])
-            elif ranked_retrieve == True:
-                prompt = Compress.ranked_retrieve(lb_prompts[i][0], lb_prompts[i][1]) + "\n" + lb_prompts[i][1]
+            while len(lb_prompts) == i:
+                print("", end="")
+            prompt = lb_prompts[i]
             
             # Below Code Block From: https://docs.sglang.ai/advanced_features/speculative_decoding.html
             response = client.chat.completions.create(
-                model=EAGLE_model_paths[0],
+                model=base_model_paths[0],
                 messages=[
                     {"role": "user", "content": prompt},
                 ],
@@ -114,12 +138,12 @@ elif ranked_retrieve == True:
     compression_tag == "_RR"
 
 # Below Code Block From: https://github.com/sgl-project/SpecForge/blob/main/scripts/prepare_data.py
-with open(f"LBE_Solo_Output_{EAGLE_model_paths[0]}{compression_tag}.jsonl", "w") as f:
+with open(f"LBE_Output_{EAGLE_model_paths[0]}{compression_tag}.jsonl", "w") as f:
     for output in LB_outputs:
         f.write(json.dumps(output) + "\n")
 
 
-print("\n\n*******************************\nFinished Running LBE_Solo_Test.py\n\n")
+print("\n\n*******************************\nFinished Running Longbench_E_Test.py\n\n")
 
 ''' 
 References
