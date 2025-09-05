@@ -9,6 +9,7 @@ import openai
 import Data
 import Compress
 import hashlib
+from matplotlib import pyplot as plt
 
 base_model_paths = ["Qwen/Qwen3-1.7B"]
 EAGLE_model_paths = ["AngelSlim/Qwen3-1.7B_eagle3"]
@@ -62,6 +63,9 @@ print("Ranked Retrieve: ", ranked_retrieve)
 # LongBench-E Assessment Loop
 wall_times = []
 token_rates = []
+input_tokens = []
+output_tokens = []
+
 for test_run in range(test_runs):
     run = 1
     for i in range(len(lb_prompts)):
@@ -98,6 +102,9 @@ for test_run in range(test_runs):
         new_tokens = response.usage.completion_tokens
         tokens_per_second = new_tokens / (elapsed * pow(10, -9))
         token_rates.append(tokens_per_second)
+        output_tokens.append(new_tokens)
+
+        input_tokens = response.usage.prompt_tokens
 
         # Reference for below code block: https://github.com/SafeAILab/EAGLE/issues/153
         #steps = int(output_ids[2])
@@ -138,6 +145,15 @@ else:
 with open(output_name, "x") as f:
     for output in LB_outputs:
         f.write(json.dumps(output) + "\n")
+
+
+# Final Plots
+
+plt.title("Input Tokens vs Token Rates")
+plt.plot(input_tokens, token_rates)
+
+plt.title("Output Tokens vs Token Rates")
+plt.plot(output_tokens, token_rates)
 
 
 print("\n\n*******************************\nFinished Running Longbench_E_Test.py\n\n")
