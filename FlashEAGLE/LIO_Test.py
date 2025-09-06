@@ -9,7 +9,6 @@ import openai
 import Data
 import Compress
 import hashlib
-from matplotlib import pyplot as plt
 
 dataset = "THUDM/LongBench"
 LIO_model_paths = ["deepseek-ai/DeepSeek-R1"]
