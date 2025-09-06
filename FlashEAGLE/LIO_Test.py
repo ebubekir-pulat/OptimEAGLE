@@ -81,7 +81,7 @@ wait_for_server(f"http://localhost:{port}")
 client = openai.Client(base_url=f"http://127.0.0.1:{port}/v1", api_key="None")
 
 
-LB_outputs = []
+LIO_outputs = []
 summarise = True
 ranked_retrieve = False
 test_runs = 1
@@ -129,7 +129,7 @@ for test_run in range(test_runs):
         finish = time.perf_counter_ns()
 
         # Reference for below code line: https://stackoverflow.com/questions/77444332/openai-python-package-error-chatcompletion-object-is-not-subscriptable 
-        lb_output = response.choices[0].message.content
+        model_output = response.choices[0].message.content
         
         elapsed = finish - start
         wall_times.append(elapsed)
@@ -148,13 +148,16 @@ for test_run in range(test_runs):
 
         # Below Code Block From: https://github.com/sgl-project/SpecForge/blob/main/scripts/prepare_data.py
         output = {
-            "id": hashlib.md5((prompt + lb_output).encode()).hexdigest(),
-            "output": lb_output
+            "id": hashlib.md5((prompt + model_output).encode()).hexdigest(),
+            "output": model_output
         }
-        LB_outputs.append(output)
+        LIO_outputs.append(output)
 
 # Print LongBench-E Results
-print(f"LongBench-E Results for {EAGLE_model_paths[0]}:")
+print(f"LIO Results for {LIO_model_paths[0]}:")
+print(f"Dataset: {dataset}")
+print(f"EAGLE Model: {EAGLE_model_paths[0]}")
+print(f"Base Model: {base_model_paths[0]}")
 print("Mean Wall Time (ns): ", np.mean(wall_times))
 print("Mean Tokens Generated/s: ", np.mean(token_rates))
 #print("Average Acceptance Length: ", np.mean(avg_accept_lens))
@@ -168,27 +171,15 @@ if summarise == True:
 elif ranked_retrieve == True:
     compression_tag == "_RR"
 
-if eagle3 == True:
-    output_name = f"LBE_Output_EAGLE3_{EAGLE_model_paths[0]}{compression_tag}.jsonl" 
-else:
-    output_name = f"LBE_Output_AutoReg_{base_model_paths[0]}{compression_tag}.jsonl" 
-
+output_name = f"LIO_Output_{LIO_model_paths[0]}_{EAGLE_model_paths[0]}{compression_tag}.jsonl" 
+ 
 # Below Code Block From: https://github.com/sgl-project/SpecForge/blob/main/scripts/prepare_data.py
 with open(output_name, "x") as f:
-    for output in LB_outputs:
+    for output in LIO_outputs:
         f.write(json.dumps(output) + "\n")
 
 
-# Final Plots
-
-plt.title("Input Tokens vs Token Rates")
-plt.plot(input_tokens, token_rates)
-
-plt.title("Output Tokens vs Token Rates")
-plt.plot(output_tokens, token_rates)
-
-
-print("\n\n*******************************\nFinished Running Longbench_E_Test.py\n\n")
+print("\n\n*******************************\nFinished Running LIO_Test.py\n\n")
 
 ''' 
 References
