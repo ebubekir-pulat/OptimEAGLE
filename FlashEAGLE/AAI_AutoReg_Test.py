@@ -64,12 +64,13 @@ for test_run in range(test_runs):
 
         finish = time.perf_counter_ns()
 
+        # Reference for below code line: https://huggingface.co/docs/transformers/main/en/model_doc/llama#transformers.LlamaForCausalLM.forward.example
+        decoded_output = tokenizer.batch_decode(generate_ids, skip_special_tokens=True, clean_up_tokenization_spaces=False)[0]
+
         if translate == True:
-            # Below Code Line From: https://github.com/SafeAILab/EAGLE
-            aai_output = Compress.en_to_zh(model.tokenizer.decode(output_ids[0][0]))[0]
+            aai_output = Compress.en_to_zh(decoded_output)[0]
         else:
-            # Below Code Line From: https://github.com/SafeAILab/EAGLE
-            aai_output = model.tokenizer.decode(output_ids[0][0])
+            aai_output = decoded_output
 
         elapsed = finish - start
         wall_times.append(elapsed)
