@@ -63,3 +63,12 @@ def extract_response(model_output):
     
     #print("\n\n*********************************************\nPrompt: ", question)
     #print("\nResponse: ", model_output)
+
+def extract_LIO_response(model_output):
+    # Reference for below code block: https://stackoverflow.com/questions/3368969/find-string-between-two-substrings
+    num_steps = model_output[model_output.find('speculative-num-steps: ') + len('speculative-num-steps: ') : model_output.find('#1')]
+    topk = model_output[model_output.find('speculative-eagle-topk: ') + len('speculative-eagle-topk: ') : model_output.find('#2')]
+    draft_tokens = model_output[model_output.find('speculative-num-draft-tokens: ') + len('speculative-num-draft-tokens: ') : model_output.find('#3')]
+    graph_max_bs = model_output[model_output.find('cuda-graph-max-bs: ') + len('cuda-graph-max-bs: ') : model_output.find('#4')]
+
+    return num_steps, topk, draft_tokens, graph_max_bs
