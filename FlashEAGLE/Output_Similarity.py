@@ -29,7 +29,7 @@ def main(file1, file2):
 # Note: Put Reference For Above Link
 
 if __name__ == '__main__':
-    main(sys.argv[0], sys.argv[1])
+    main(sys.argv[1], sys.argv[2])
 
 
 print("\n\n*******************************\nFinished Running Output_Similarity.py\n\n")
