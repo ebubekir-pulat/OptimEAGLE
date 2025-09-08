@@ -104,7 +104,7 @@ for test_run in range(test_runs):
         token_rates.append(tokens_per_second)
         output_tokens.append(new_tokens)
 
-        input_tokens = response.usage.prompt_tokens
+        input_tokens.append(response.usage.prompt_tokens)
 
         # Reference for below code block: https://github.com/SafeAILab/EAGLE/issues/153
         #steps = int(output_ids[2])
