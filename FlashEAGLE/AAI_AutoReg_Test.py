@@ -1,8 +1,7 @@
-print("\n\n*******************************\nStarting AAI_Test.py\n\n")
+print("\n\n*******************************\nStarting AAI_AutoReg_Test.py\n\n")
 
 import time
 import numpy as np
-import torch
 import json
 from fastchat.model import get_conversation_template
 from transformers import AutoModelForCausalLM, AutoTokenizer
@@ -93,7 +92,7 @@ if translate == True:
     translate_tag = "_Translate"
 
 # Below Code Block From: https://github.com/sgl-project/SpecForge/blob/main/scripts/prepare_data.py
-with open(f"AAI_Output_AutoReg_{translate_tag}_{base_model_paths[0]}.jsonl", "x") as f:
+with open(f"AAI_Output_AutoReg{translate_tag}_{base_model_paths[0]}.jsonl", "x") as f:
     for output in AAI_outputs:
         f.write(json.dumps(output) + "\n")
 
