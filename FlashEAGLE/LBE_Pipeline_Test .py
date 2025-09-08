@@ -138,7 +138,7 @@ elif ranked_retrieve == True:
     compression_tag == "_RR"
 
 # Below Code Block From: https://github.com/sgl-project/SpecForge/blob/main/scripts/prepare_data.py
-with open(f"LBE_Output_{EAGLE_model_paths[0]}{compression_tag}.jsonl", "w") as f:
+with open(f"LBE_Output_{EAGLE_model_paths[0].replace("/", "-")}{compression_tag}.jsonl", "w") as f:
     for output in LB_outputs:
         f.write(json.dumps(output) + "\n")
 

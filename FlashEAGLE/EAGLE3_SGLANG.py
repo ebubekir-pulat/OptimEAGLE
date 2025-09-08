@@ -106,7 +106,7 @@ print("Mean Tokens Generated/s: ", np.mean(token_rates))
 # Below Code Line From: https://docs.sglang.ai/advanced_features/speculative_decoding.html
 terminate_process(server_process)
 
-output_name = f"EAGLE3_Output_{EAGLE_model_paths[0]}_{dataset}.jsonl" 
+output_name = f"EAGLE3_Output_{EAGLE_model_paths[0].replace("/", "-")}_{dataset}.jsonl" 
 
 # Below Code Block From: https://github.com/sgl-project/SpecForge/blob/main/scripts/prepare_data.py
 with open(output_name, "x") as f:

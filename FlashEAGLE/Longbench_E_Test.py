@@ -137,9 +137,9 @@ elif ranked_retrieve == True:
     compression_tag == "_RR"
 
 if eagle3 == True:
-    output_name = f"LBE_Output_EAGLE3_{EAGLE_model_paths[0]}{compression_tag}.jsonl" 
+    output_name = f"LBE_Output_EAGLE3_{EAGLE_model_paths[0].replace("/", "-")}{compression_tag}.jsonl" 
 else:
-    output_name = f"LBE_Output_AutoReg_{base_model_paths[0]}{compression_tag}.jsonl" 
+    output_name = f"LBE_Output_AutoReg_{base_model_paths[0].replace("/", "-")}{compression_tag}.jsonl" 
 
 # Below Code Block From: https://github.com/sgl-project/SpecForge/blob/main/scripts/prepare_data.py
 with open(output_name, "x") as f:

@@ -92,7 +92,7 @@ if translate == True:
     translate_tag = "_Translate"
 
 # Below Code Block From: https://github.com/sgl-project/SpecForge/blob/main/scripts/prepare_data.py
-with open(f"AAI_Output_AutoReg{translate_tag}_{base_model_paths[0]}.jsonl", "x") as f:
+with open(f"AAI_Output_AutoReg{translate_tag}_{base_model_paths[0].replace("/", "-")}.jsonl", "x") as f:
     for output in AAI_outputs:
         f.write(json.dumps(output) + "\n")
 

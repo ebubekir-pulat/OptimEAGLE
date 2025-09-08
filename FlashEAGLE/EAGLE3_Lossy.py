@@ -112,7 +112,7 @@ print("Mean Tokens Generated/s: ", np.mean(token_rates))
 # Below Code Line From: https://docs.sglang.ai/advanced_features/speculative_decoding.html
 terminate_process(server_process)
 
-output_name = f"LossyEAGLE3_Output_{EAGLE_model_paths[0]}_{accept_threshold}_{threshold_acc}.jsonl" 
+output_name = f"LossyEAGLE3_Output_{EAGLE_model_paths[0].replace("/", "-")}_{accept_threshold}_{threshold_acc}.jsonl" 
 
 # Below Code Block From: https://github.com/sgl-project/SpecForge/blob/main/scripts/prepare_data.py
 with open(output_name, "x") as f:

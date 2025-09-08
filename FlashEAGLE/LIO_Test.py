@@ -170,7 +170,7 @@ if summarise == True:
 elif ranked_retrieve == True:
     compression_tag == "_RR"
 
-output_name = f"LIO_Output_{LIO_model_paths[0]}_{EAGLE_model_paths[0]}{compression_tag}.jsonl" 
+output_name = f"LIO_Output_{LIO_model_paths[0].replace("/", "-")}_{EAGLE_model_paths[0].replace("/", "-")}{compression_tag}.jsonl" 
  
 # Below Code Block From: https://github.com/sgl-project/SpecForge/blob/main/scripts/prepare_data.py
 with open(output_name, "x") as f:
