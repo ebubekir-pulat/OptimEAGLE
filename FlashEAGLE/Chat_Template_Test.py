@@ -62,7 +62,7 @@ response = client.chat.completions.create(
 LIO_output = response.choices[0].message.content
 
 # Reference for below code block: https://www.w3schools.com/python/python_file_write.asp
-with open("ChatTemplate.js", "x") as f:
+with open("ChatTemplate.json", "x") as f:
     f.write(LIO_output)
 
 # Below Code Line From: https://docs.sglang.ai/advanced_features/speculative_decoding.html
@@ -73,7 +73,7 @@ terminate_process(server_process)
 server_process, port = launch_server_cmd(
     f"""
 python3 -m sglang.launch_server --model {base_model_paths[0]}  --speculative-algorithm EAGLE3 \
-    --speculative-draft-model-path {EAGLE_model_paths[0]} --chat-template ChatTemplate.js --dtype float16
+    --speculative-draft-model-path {EAGLE_model_paths[0]} --chat-template ChatTemplate.json --dtype float16
 """
 )
 
