@@ -35,7 +35,7 @@ sb_prompts = Data.specbench()
 # Preparing for assessment
 models_to_test = [0]
 test_runs = 1
-max_new_tokens = 128
+max_new_tokens = 1024
 temp = 0.0
 
 print("\nEvaluation Settings Chosen:")
