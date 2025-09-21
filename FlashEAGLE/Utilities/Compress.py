@@ -9,7 +9,6 @@ model_name = 'utrobinmv/t5_translate_en_ru_zh_small_1024'
 translate_model = T5ForConditionalGeneration.from_pretrained(model_name)
 translate_model.to('cuda')
 translate_tokenizer = T5Tokenizer.from_pretrained(model_name)
-# Note: Put References for above link
 
 def zh_to_en(text):
     # Reference for below code block: https://huggingface.co/utrobinmv/t5_translate_en_ru_zh_small_1024
@@ -36,13 +35,12 @@ def summarise_question(question):
     # Below Code Block From: https://huggingface.co/pszemraj/long-t5-tglobal-base-16384-book-summary
     summed_question = summariser(question)
     return summed_question[0]["summary_text"]
-    # Note: Remember to put reference at end for above link.
 
 
 # Ranked Retrieval
 # Below code block from: https://huggingface.co/tomaarsen/Qwen3-Reranker-0.6B-seq-cls
 rr_tokenizer = AutoTokenizer.from_pretrained("tomaarsen/Qwen3-Reranker-0.6B-seq-cls", padding_side="left")
-rr_model = AutoModelForSequenceClassification.from_pretrained("tomaarsen/Qwen3-Reranker-0.6B-seq-cls", torch_dtype=torch.float16, attn_implementation="flash_attention_2").cuda().eval()
+rr_model = AutoModelForSequenceClassification.from_pretrained("tomaarsen/Qwen3-Reranker-0.6B-seq-cls", torch_dtype=torch.float16).cuda().eval()
 
 # Below code block from: https://huggingface.co/tomaarsen/Qwen3-Reranker-0.6B-seq-cls
 def format_instruction(instruction, query, doc):
@@ -60,7 +58,7 @@ def ranked_retrieve(context, question):
     max_length = 128 * 1024
     task = "Given a web search query, retrieve relevant passages that answer the query"
     context_sentences = nltk.tokenize.sent_tokenize(context, language='english')
-    queries = [question for i in range(len(context_sentences))]
+    queries = [question for _ in range(len(context_sentences))]
 
     pairs = [format_instruction(task, query, doc) for query, doc in zip(queries, context_sentences)]
     
@@ -75,16 +73,32 @@ def ranked_retrieve(context, question):
     relevancies = logits.sigmoid()
     mean_relevancy = np.mean(relevancies)
 
-    return_context = []
+    return_context = ""
 
     for i in range(len(relevancies)):
         if relevancies[i] >= mean_relevancy:
             return_context += context_sentences[i] + ". "
 
+    return_context = return_context[:len(return_context) - 1]
     return return_context
-# Note: Reference for ranked retrieval, and NLTK
+
 
 '''
 References
-1.
+
+1. Bird, Steven, Edward Loper and Ewan Klein (2009).
+Natural Language Processing with Python.  O'Reilly Media Inc.
+
+2. Peter Szemraj, “long-t5-tglobal-base-16384-book-summary (revision 4b12bce),” 2022. [Online]. Available:
+https://huggingface.co/pszemraj/long-t5-tglobal-base-16384-book-summary
+
+3. Q. Team, “Qwen3-embedding,” May 2025. [Online]. Available: https://qwenlm.github.io/blog/qwen3/
+
+4. T. Wolf, L. Debut, V. Sanh, J. Chaumond, C. Delangue, A. Moi, P. Cistac, T. Rault, R. Louf, M. Funtowicz,
+J. Davison, S. Shleifer, P. von Platen, C. Ma, Y. Jernite, J. Plu, C. Xu, T. L. Scao, S. Gugger,
+M. Drame, Q. Lhoest, and A. M. Rush, “Transformers: State-of-the-art natural language processing,”
+in Proceedings of the 2020 Conference on Empirical Methods in Natural Language Processing: System
+Demonstrations. Online: Association for Computational Linguistics, Oct. 2020, pp. 38–45. [Online]. Available:
+https://www.aclweb.org/anthology/2020.emnlp-demos.6
+
 '''
