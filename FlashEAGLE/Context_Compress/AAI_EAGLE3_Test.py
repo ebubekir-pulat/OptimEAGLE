@@ -1,3 +1,7 @@
+# EAGLE-3, Context Compression Testing on Align-Anything-Instruction-100K-zh
+# Context Compression via Translation
+# Hyperparameters are "translate", "test_runs", "max_new_tokens"
+
 print("\n\n*******************************\nStarting AAI_EAGLE3_Test.py\n\n")
 
 import time
@@ -30,6 +34,8 @@ def model_init():
 
 aai_ds = Data.aai_dataset()
 AAI_outputs = []
+
+# Hyperparameters
 translate = True
 test_runs = 1
 max_new_tokens = 128
@@ -93,7 +99,7 @@ for test_run in range(test_runs):
 
         # Below Code Block From: https://github.com/sgl-project/SpecForge/blob/main/scripts/prepare_data.py
         output = {
-            "id": hashlib.md5((question + Data.extract_response(aai_output)).encode()).hexdigest(),
+            "id": hashlib.md5((str(test_run) + question + Data.extract_response(aai_output)).encode()).hexdigest(),
             "output": Data.extract_response(aai_output)
         }
         AAI_outputs.append(output)
@@ -116,3 +122,33 @@ with open(f"AAI_Output_EAGLE3{translate_tag}_{EAGLE_model_paths[0].replace("/", 
         f.write(json.dumps(output) + "\n")
 
 print("\n\n*******************************\nFinished Running AAI_EAGLE3_Test.py\n\n")
+
+'''
+References
+
+1. DeepSeek-AI, “Deepseek-r1: Incentivizing reasoning capability in llms via reinforcement learning,” 2025.
+[Online]. Available: https://arxiv.org/abs/2501.12948
+
+2. Y. Li, F. Wei, C. Zhang, and H. Zhang, “EAGLE: Speculative sampling requires rethinking feature
+uncertainty,” in Proceedings of the 41st International Conference on Machine Learning, ser. Proceedings
+of Machine Learning Research, R. Salakhutdinov, Z. Kolter, K. Heller, A. Weller, N. Oliver, J. Scarlett,
+and F. Berkenkamp, Eds., vol. 235. PMLR, 21–27 Jul 2024, pp. 28 935–28 948. [Online]. Available:
+https://proceedings.mlr.press/v235/li24bt.html
+
+3. Y. Li, F. Wei, C. Zhang, and H. Zhang, “EAGLE-2: Faster inference of language models with dynamic
+draft trees,” in Proceedings of the 2024 Conference on Empirical Methods in Natural Language Processing,
+Y. Al-Onaizan, M. Bansal, and Y.-N. Chen, Eds. Miami, Florida, USA: Association for Computational
+Linguistics, Nov. 2024, pp. 7421–7432. [Online]. Available: https://aclanthology.org/2024.emnlp-main.422/
+
+4. Y. Li, F. Wei, C. Zhang, and H. Zhang, “Eagle-3: Scaling up inference acceleration of large language models
+via training-time test,” 2025. [Online]. Available: https://arxiv.org/abs/2503.01840
+
+5. C. W. F. Y. S. S. Y. W. Y. Z. Y. H. H. Z. Y. Z. Shenggui Li, Yikai Zhu, “Specforge: Train speculative decoding
+models effortlessly,” https://github.com/sgl-project/specforge, 2025.
+
+6. L. Zheng, W.-L. Chiang, Y. Sheng, S. Zhuang, Z. Wu, Y. Zhuang, Z. Lin, Z. Li, D. Li, E. P. Xing, H. Zhang,
+J. E. Gonzalez, and I. Stoica, “Judging llm-as-a-judge with mt-bench and chatbot arena,” in Proceedings of
+the 37th International Conference on Neural Information Processing Systems, ser. NIPS ’23. Red Hook, NY,
+USA: Curran Associates Inc., 2023. 
+
+'''
