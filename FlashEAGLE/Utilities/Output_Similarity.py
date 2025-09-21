@@ -26,8 +26,6 @@ def main(file1, file2):
     print(f"File 2: {file2}")
     print("Mean Similarity Score: ", np.mean(similarity_scores))
 
-# Note: Put Reference For Above Link
-
 if __name__ == '__main__':
     main(sys.argv[1], sys.argv[2])
 
@@ -37,6 +35,15 @@ print("\n\n*******************************\nFinished Running Output_Similarity.p
 '''
 References
 
-1.
+1. J. Chen, S. Xiao, P. Zhang, K. Luo, D. Lian, and Z. Liu, “Bge m3-embedding: Multi-lingual, multi-functionality,
+multi-granularity text embeddings through self-knowledge distillation,” 2023.
+
+2. S. Xiao, Z. Liu, P. Zhang, and N. Muennighoff, “C-pack: Packaged resources to advance general chinese embed-
+ding,” 2023.
+
+3. S. Xiao, Z. Liu, P. Zhang, and X. Xing, “Lm-cocktail: Resilient tuning of language models via model merging,”
+2023.
+
+4. P. Zhang, S. Xiao, Z. Liu, Z. Dou, and J.-Y. Nie, “Retrieve anything to augment large language models,” 2023.
 
 '''
