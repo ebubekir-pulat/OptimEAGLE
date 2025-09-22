@@ -1,3 +1,6 @@
+# LIO Testing
+# Hyperparameters: dataset, summarise, ranked_retrieve, test_runs, max_new_tokens, temp
+
 print("\n\n*******************************\nStarting LIO_Test.py\n\n")
 
 import time
@@ -9,12 +12,13 @@ import openai
 import Data
 import Compress
 import hashlib
+import matplotlib.pyplot as plt
 
+# Hyperparameter
 dataset = "THUDM/LongBench"
-LIO_model_paths = ["deepseek-ai/DeepSeek-R1"]
-base_model_paths = ["Qwen/Qwen3-1.7B"]
-EAGLE_model_paths = ["AngelSlim/Qwen3-1.7B_eagle3"]
-# Note: Reference for Qwen3: https://huggingface.co/Qwen/Qwen3-1.7B, https://huggingface.co/AngelSlim/Qwen3-1.7B_eagle3
+LIO_model_paths = ["openai/gpt-oss-20b"]
+base_model_paths = ["Qwen/Qwen3-8B"]
+EAGLE_model_paths = ["Tengyunw/qwen3_8b_eagle3"]
 
 if dataset == "THUDM/LongBench":
     prompts = Data.longbench_e()
@@ -23,14 +27,11 @@ elif dataset == "PKU-Alignment/Align-Anything-Instruction-100K-zh":
 
 
 LIO_prompt = f"Generate optimal hyperparameters for EAGLE-3 speculative decoding with SGLANG, where the \
-            hyperparameters are --speculative-num-steps, --speculative-eagle-topk, --speculative-num-draft-tokens and --cuda-graph-max-bs. \
-            The base model to be used is {base_model_paths[0]}, the EAGLE-3 model to be used is {EAGLE_model_paths[0]} \
-            and the dataset to be tested on is {dataset}. \
-            \nGenerate the hyperparameters in the format: \
-            \nspeculative-num-steps: *value* #1 \
-            \nspeculative-eagle-topk: *value* #2 \
-            \nspeculative-num-draft-tokens: *value* #3 \
-            \ncuda-graph-max-bs: *value* #4"
+            base model to be used is {base_model_paths[0]}, the EAGLE-3 model to be used is {EAGLE_model_paths[0]} \
+            and the dataset to be tested on is {dataset}. Choose hyperparameters that optimise acceptance length, \
+            tokens generated per second and wall-time speedup. Provide as many hyperparameters as necessary for maximum \
+            performance. Generate the hyperparameters in the format: --hyperparameter_name1 value --hyperparameter_name2 value \
+            and so on. Before providing the hyperparameters, put a #START delimiter, and when finished, put a #END delimiter."
 
 
 # Preparing LIO SGLANG
@@ -44,7 +45,6 @@ python3 -m sglang.launch_server --model-path {LIO_model_paths[0]} --dtype float1
 # Below Code Block From: https://docs.sglang.ai/advanced_features/speculative_decoding.html
 wait_for_server(f"http://localhost:{port}")
 client = openai.Client(base_url=f"http://127.0.0.1:{port}/v1", api_key="None")
-
 
 # Below Code Block From: https://docs.sglang.ai/advanced_features/speculative_decoding.html
 response = client.chat.completions.create(
@@ -62,16 +62,14 @@ LIO_output = response.choices[0].message.content
 # Below Code Line From: https://docs.sglang.ai/advanced_features/speculative_decoding.html
 terminate_process(server_process)
 
-num_steps, topk, draft_tokens, graph_max_bs = Data.extract_LIO_response(LIO_output)
+LIO_output = Data.extract_LIO_response(LIO_output)
 
 # Preparing SGLANG with EAGLE3
 # Below Code Block From: https://docs.sglang.ai/advanced_features/speculative_decoding.html
 server_process, port = launch_server_cmd(
     f"""
 python3 -m sglang.launch_server --model {base_model_paths[0]}  --speculative-algorithm EAGLE3 \
-    --speculative-draft-model-path {EAGLE_model_paths[0]} --speculative-num-steps {num_steps} \
-        --speculative-eagle-topk {topk} --speculative-num-draft-tokens {draft_tokens} --mem-fraction 0.6 \
-        --cuda-graph-max-bs {graph_max_bs} --dtype float16
+    --speculative-draft-model-path {EAGLE_model_paths[0]} {LIO_output} --dtype float16
 """
 )
 
@@ -81,6 +79,7 @@ client = openai.Client(base_url=f"http://127.0.0.1:{port}/v1", api_key="None")
 
 
 LIO_outputs = []
+# Hyperparameters
 summarise = False
 ranked_retrieve = False
 test_runs = 1
@@ -88,11 +87,12 @@ max_new_tokens = 128
 temp = 0.0
 
 print("\nEvaluation Settings Chosen:")
+print("Dataset: ", dataset)
 print("Test Runs: ", test_runs)
 print("Max New Tokens: ", max_new_tokens)
 print("Temperature: ", temp)
-print("Summarise: ", summarise, "\n")
-print("Ranked Retrieve: ", ranked_retrieve)
+print("Summarise: ", summarise)
+print("Ranked Retrieve: ", ranked_retrieve, "\n")
 
 # LIO Assessment Loop
 wall_times = []
@@ -107,9 +107,13 @@ for test_run in range(test_runs):
         print("Test Question: ", run)
         run += 1
 
-        prompt = prompts[i][0] + "\n" + prompts[i][1]
+        if dataset == "THUDM/LongBench":
+            prompt = prompts[i][0] + "\n" + prompts[i][1]
+        elif dataset == "PKU-Alignment/Align-Anything-Instruction-100K-zh":
+            prompt = prompts[i]
+
         if summarise == True:
-            prompt = Compress.summarise_question(prompts[i][0] + "\n" + prompts[i][1])
+            prompt = Compress.summarise_text(prompts[i][0]) + "\n" + prompts[i][1]
         elif ranked_retrieve == True:
             prompt = Compress.ranked_retrieve(prompts[i][0], prompts[i][1]) + "\n" + prompts[i][1]
         
@@ -138,16 +142,11 @@ for test_run in range(test_runs):
         token_rates.append(tokens_per_second)
         output_tokens.append(new_tokens)
 
-        input_tokens = response.usage.prompt_tokens
-
-        # Reference for below code block: https://github.com/SafeAILab/EAGLE/issues/153
-        #steps = int(output_ids[2])
-        #avg_accept_len = new_tokens / steps
-        #avg_accept_lens.append(avg_accept_len)
+        input_tokens.append(response.usage.prompt_tokens)
 
         # Below Code Block From: https://github.com/sgl-project/SpecForge/blob/main/scripts/prepare_data.py
         output = {
-            "id": hashlib.md5((prompt + model_output).encode()).hexdigest(),
+            "id": hashlib.md5((str(test_run) + prompt + model_output).encode()).hexdigest(),
             "output": model_output
         }
         LIO_outputs.append(output)
@@ -159,7 +158,6 @@ print(f"EAGLE Model: {EAGLE_model_paths[0]}")
 print(f"Base Model: {base_model_paths[0]}")
 print("Mean Wall Time (ns): ", np.mean(wall_times))
 print("Mean Tokens Generated/s: ", np.mean(token_rates))
-#print("Average Acceptance Length: ", np.mean(avg_accept_lens))
 
 # Below Code Line From: https://docs.sglang.ai/advanced_features/speculative_decoding.html
 terminate_process(server_process)
@@ -177,10 +175,40 @@ with open(output_name, "x") as f:
     for output in LIO_outputs:
         f.write(json.dumps(output) + "\n")
 
+# Final Plots
+plt.title("Input Tokens vs Token Rates")
+plt.plot(input_tokens, token_rates)
+plt.savefig("InputTokens_vs_TokenRates.png")
+
+plt.title("Output Tokens vs Token Rates")
+plt.plot(output_tokens, token_rates)
+plt.savefig("OutputTokens_vs_TokenRates.png")
+
 
 print("\n\n*******************************\nFinished Running LIO_Test.py\n\n")
 
 ''' 
 References
-1.
+
+1. Y. Li, F. Wei, C. Zhang, and H. Zhang, “EAGLE: Speculative sampling requires rethinking feature
+uncertainty,” in Proceedings of the 41st International Conference on Machine Learning, ser. Proceedings
+of Machine Learning Research, R. Salakhutdinov, Z. Kolter, K. Heller, A. Weller, N. Oliver, J. Scarlett,
+and F. Berkenkamp, Eds., vol. 235. PMLR, 21–27 Jul 2024, pp. 28 935–28 948. [Online]. Available:
+https://proceedings.mlr.press/v235/li24bt.html
+
+2. Y. Li, F. Wei, C. Zhang, and H. Zhang, “EAGLE-2: Faster inference of language models with dynamic
+draft trees,” in Proceedings of the 2024 Conference on Empirical Methods in Natural Language Processing,
+Y. Al-Onaizan, M. Bansal, and Y.-N. Chen, Eds. Miami, Florida, USA: Association for Computational
+Linguistics, Nov. 2024, pp. 7421–7432. [Online]. Available: https://aclanthology.org/2024.emnlp-main.422/
+
+3. Y. Li, F. Wei, C. Zhang, and H. Zhang, “Eagle-3: Scaling up inference acceleration of large language models
+via training-time test,” 2025. [Online]. Available: https://arxiv.org/abs/2503.01840
+
+4. C. W. F. Y. S. S. Y. W. Y. Z. Y. H. H. Z. Y. Z. Shenggui Li, Yikai Zhu, “Specforge: Train speculative decoding
+models effortlessly,” https://github.com/sgl-project/specforge, 2025.
+
+5. OpenAI, “gpt-oss-120b gpt-oss-20b model card,” 2025. [Online]. Available: https://arxiv.org/abs/2508.10925
+
+6. Q. Team, “Qwen3 technical report,” 2025. [Online]. Available: https://arxiv.org/abs/2505.09388
+
 '''
