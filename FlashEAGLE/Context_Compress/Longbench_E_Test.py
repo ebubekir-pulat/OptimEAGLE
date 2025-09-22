@@ -1,3 +1,7 @@
+# Context Compression Testing on LongBench-E
+# Summarisation and Ranked Retrieval
+# Hyperparameters: eagle3, summarise, ranked_retrieve, test_runs, max_new_tokens, temp
+
 print("\n\n*******************************\nStarting Longbench_E_Test.py\n\n")
 
 import time
@@ -11,11 +15,12 @@ import Compress
 import hashlib
 from matplotlib import pyplot as plt
 
-base_model_paths = ["Qwen/Qwen3-1.7B"]
-EAGLE_model_paths = ["AngelSlim/Qwen3-1.7B_eagle3"]
-# Note: Reference for Qwen3: https://huggingface.co/Qwen/Qwen3-1.7B, https://huggingface.co/AngelSlim/Qwen3-1.7B_eagle3
+base_model_paths = ["Qwen/Qwen3-8B"]
+EAGLE_model_paths = ["Tengyunw/qwen3_8b_eagle3"]
 
 lb_prompts = Data.longbench_e()
+
+# Hyperparameter
 eagle3 = True
 
 if eagle3 == True:
@@ -24,9 +29,7 @@ if eagle3 == True:
     server_process, port = launch_server_cmd(
         f"""
     python3 -m sglang.launch_server --model {base_model_paths[0]}  --speculative-algorithm EAGLE3 \
-        --speculative-draft-model-path {EAGLE_model_paths[0]} --speculative-num-steps 5 \
-            --speculative-eagle-topk 8 --speculative-num-draft-tokens 32 --mem-fraction 0.6 \
-            --cuda-graph-max-bs 2 --dtype float16
+        --speculative-draft-model-path {EAGLE_model_paths[0]} --dtype float16
     """
     )
 else:
@@ -34,8 +37,7 @@ else:
     # Below Code Block From: https://docs.sglang.ai/advanced_features/speculative_decoding.html, https://docs.sglang.ai/basic_usage/send_request.html
     server_process, port = launch_server_cmd(
         f"""
-    python3 -m sglang.launch_server --model-path {base_model_paths[0]} --mem-fraction 0.6 \
-            --cuda-graph-max-bs 2 --dtype float16
+    python3 -m sglang.launch_server --model-path {base_model_paths[0]} --dtype float16
     """
     )
 
@@ -46,6 +48,7 @@ client = openai.Client(base_url=f"http://127.0.0.1:{port}/v1", api_key="None")
 
 
 LB_outputs = []
+# Hyperparameters
 summarise = True
 ranked_retrieve = False
 test_runs = 1
@@ -57,8 +60,8 @@ print("EAGLE3: ", eagle3)
 print("Test Runs: ", test_runs)
 print("Max New Tokens: ", max_new_tokens)
 print("Temperature: ", temp)
-print("Summarise: ", summarise, "\n")
-print("Ranked Retrieve: ", ranked_retrieve)
+print("Summarise: ", summarise)
+print("Ranked Retrieve: ", ranked_retrieve, "\n")
 
 # LongBench-E Assessment Loop
 wall_times = []
@@ -75,7 +78,7 @@ for test_run in range(test_runs):
 
         prompt = lb_prompts[i][0] + "\n" + lb_prompts[i][1]
         if summarise == True:
-            prompt = Compress.summarise_question(lb_prompts[i][0] + "\n" + lb_prompts[i][1])
+            prompt = Compress.summarise_text(lb_prompts[i][0]) + "\n" + lb_prompts[i][1]
         elif ranked_retrieve == True:
             prompt = Compress.ranked_retrieve(lb_prompts[i][0], lb_prompts[i][1]) + "\n" + lb_prompts[i][1]
         
@@ -106,14 +109,9 @@ for test_run in range(test_runs):
 
         input_tokens.append(response.usage.prompt_tokens)
 
-        # Reference for below code block: https://github.com/SafeAILab/EAGLE/issues/153
-        #steps = int(output_ids[2])
-        #avg_accept_len = new_tokens / steps
-        #avg_accept_lens.append(avg_accept_len)
-
         # Below Code Block From: https://github.com/sgl-project/SpecForge/blob/main/scripts/prepare_data.py
         output = {
-            "id": hashlib.md5((prompt + lb_output).encode()).hexdigest(),
+            "id": hashlib.md5((str(test_run) + prompt + lb_output).encode()).hexdigest(),
             "output": lb_output
         }
         LB_outputs.append(output)
@@ -122,10 +120,9 @@ for test_run in range(test_runs):
 if eagle3 == True:
     print(f"LongBench-E Results for {EAGLE_model_paths[0]}:")
 else:
-    print(f"LongBench-E Results for AutoReg {base_model_paths[0]}:")
+    print(f"LongBench-E Results for {base_model_paths[0]}:")
 print("Mean Wall Time (ns): ", np.mean(wall_times))
 print("Mean Tokens Generated/s: ", np.mean(token_rates))
-#print("Average Acceptance Length: ", np.mean(avg_accept_lens))
 
 # Below Code Line From: https://docs.sglang.ai/advanced_features/speculative_decoding.html
 terminate_process(server_process)
@@ -148,17 +145,37 @@ with open(output_name, "x") as f:
 
 
 # Final Plots
-
 plt.title("Input Tokens vs Token Rates")
 plt.plot(input_tokens, token_rates)
+plt.savefig("InputTokens_vs_TokenRates.png")
 
 plt.title("Output Tokens vs Token Rates")
 plt.plot(output_tokens, token_rates)
+plt.savefig("OutputTokens_vs_TokenRates.png")
 
 
 print("\n\n*******************************\nFinished Running Longbench_E_Test.py\n\n")
 
 ''' 
 References
-1.
+
+1. Y. Li, F. Wei, C. Zhang, and H. Zhang, “EAGLE: Speculative sampling requires rethinking feature
+uncertainty,” in Proceedings of the 41st International Conference on Machine Learning, ser. Proceedings
+of Machine Learning Research, R. Salakhutdinov, Z. Kolter, K. Heller, A. Weller, N. Oliver, J. Scarlett,
+and F. Berkenkamp, Eds., vol. 235. PMLR, 21–27 Jul 2024, pp. 28 935–28 948. [Online]. Available:
+https://proceedings.mlr.press/v235/li24bt.html
+
+2. Y. Li, F. Wei, C. Zhang, and H. Zhang, “EAGLE-2: Faster inference of language models with dynamic
+draft trees,” in Proceedings of the 2024 Conference on Empirical Methods in Natural Language Processing,
+Y. Al-Onaizan, M. Bansal, and Y.-N. Chen, Eds. Miami, Florida, USA: Association for Computational
+Linguistics, Nov. 2024, pp. 7421–7432. [Online]. Available: https://aclanthology.org/2024.emnlp-main.422/
+
+3. Y. Li, F. Wei, C. Zhang, and H. Zhang, “Eagle-3: Scaling up inference acceleration of large language models
+via training-time test,” 2025. [Online]. Available: https://arxiv.org/abs/2503.01840
+
+4. C. W. F. Y. S. S. Y. W. Y. Z. Y. H. H. Z. Y. Z. Shenggui Li, Yikai Zhu, “Specforge: Train speculative decoding
+models effortlessly,” https://github.com/sgl-project/specforge, 2025.
+
+5. Q. Team, “Qwen3 technical report,” 2025. [Online]. Available: https://arxiv.org/abs/2505.09388
+
 '''

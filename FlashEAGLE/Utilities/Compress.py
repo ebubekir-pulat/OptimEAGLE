@@ -31,10 +31,10 @@ summariser = pipeline(
     device=0 if torch.cuda.is_available() else -1,
 )
 
-def summarise_question(question):
+def summarise_text(text):
     # Below Code Block From: https://huggingface.co/pszemraj/long-t5-tglobal-base-16384-book-summary
-    summed_question = summariser(question)
-    return summed_question[0]["summary_text"]
+    summed_text = summariser(text)
+    return summed_text[0]["summary_text"]
 
 
 # Ranked Retrieval
