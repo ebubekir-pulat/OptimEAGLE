@@ -11,6 +11,7 @@ from sglang.utils import wait_for_server, terminate_process
 import openai
 import Data
 import hashlib
+from matplotlib import pyplot as plt
 
 base_model_paths = ["Qwen/Qwen3-8B"]
 EAGLE_model_paths = ["Tengyunw/qwen3_8b_eagle3"]
@@ -117,6 +118,15 @@ output_name = f"EAGLE3_Output_{EAGLE_model_paths[0].replace("/", "-")}_{dataset}
 with open(output_name, "x") as f:
     for output in eagle3_outputs:
         f.write(json.dumps(output) + "\n")
+
+# Final Plots
+plt.title("Input Tokens vs Token Rates")
+plt.plot(input_tokens, token_rates)
+plt.savefig("InputTokens_vs_TokenRates.png")
+
+plt.title("Output Tokens vs Token Rates")
+plt.plot(output_tokens, token_rates)
+plt.savefig("OutputTokens_vs_TokenRates.png")
 
 
 print("\n\n*******************************\nFinished Running EAGLE3_SGLANG.py\n\n")
