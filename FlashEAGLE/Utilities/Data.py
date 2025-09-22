@@ -2,12 +2,20 @@ from datasets import load_dataset
 import pandas as pd
 
 def specbench():
-    # Getting Spec-Bench Questions from: https://github.com/hemingkx/Spec-Bench/blob/main/data/spec_bench/question.jsonl 
+    # Getting Spec-Bench Data from: https://github.com/hemingkx/Spec-Bench/blob/main/data/spec_bench/question.jsonl 
     # Below line from: https://stackoverflow.com/questions/50475635/loading-jsonl-file-as-json-objects
     jsonObj = pd.read_json(path_or_buf='../question.jsonl', lines=True)
     sb_prompts = [jsonObj.at[i, 'turns'] for i in range(len(jsonObj))]
     sb_prompts = sb_prompts[80:]
     return sb_prompts
+
+def specbench_tasks():
+    # Getting Spec-Bench Data from: https://github.com/hemingkx/Spec-Bench/blob/main/data/spec_bench/question.jsonl 
+    # Below line from: https://stackoverflow.com/questions/50475635/loading-jsonl-file-as-json-objects
+    jsonObj = pd.read_json(path_or_buf='../question.jsonl', lines=True)
+    sb_tasks = [jsonObj.at[i, 'category'] for i in range(len(jsonObj))]
+    sb_tasks = sb_tasks[80:]
+    return sb_tasks
 
 
 def aai_dataset():
