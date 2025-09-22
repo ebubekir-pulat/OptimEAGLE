@@ -1,8 +1,7 @@
-# LIO Testing
-# Hyperparameters: dataset, summarise, ranked_retrieve, test_runs, max_new_tokens, temp
-# Only choose summarise or ranked_retrieve with LongBench-E
+# LIO Testing on Spec-Bench
+# Hyperparameters: summarise, test_runs, max_new_tokens, temp
 
-print("\n\n*******************************\nStarting LIO_Test.py\n\n")
+print("\n\n*******************************\nStarting LIO_SpecBench_Test.py\n\n")
 
 import time
 import numpy as np
@@ -15,27 +14,14 @@ import Compress
 import hashlib
 import matplotlib.pyplot as plt
 
-# Hyperparameter
-dataset = "THUDM/LongBench"
 LIO_model_paths = ["openai/gpt-oss-20b"]
 base_model_paths = ["Qwen/Qwen3-8B"]
 EAGLE_model_paths = ["Tengyunw/qwen3_8b_eagle3"]
 
-if dataset == "THUDM/LongBench":
-    prompts = Data.longbench_e()
-elif dataset == "PKU-Alignment/Align-Anything-Instruction-100K-zh":
-    prompts = Data.aai_dataset()
-elif dataset == "Spec-Bench":
-    prompts = Data.specbench()
-
-
-LIO_prompt = f"Generate optimal hyperparameters for EAGLE-3 speculative decoding with SGLANG, where the \
-            base model to be used is {base_model_paths[0]}, the EAGLE-3 model to be used is {EAGLE_model_paths[0]} \
-            and the dataset to be tested on is {dataset}. Choose hyperparameters that optimise acceptance length, \
-            tokens generated per second and wall-time speedup. Provide as many hyperparameters as necessary for maximum \
-            performance. Generate the hyperparameters in the format: --hyperparameter_name1 value --hyperparameter_name2 value \
-            and so on. Before providing the hyperparameters, put a #START delimiter, and when finished, put a #END delimiter."
-
+prompts = Data.specbench()
+tasks = Data.specbench_tasks()
+tasks_set = {tasks}
+optim_params = {}
 
 # Preparing LIO SGLANG
 # Below Code Block From: https://docs.sglang.ai/advanced_features/speculative_decoding.html, https://docs.sglang.ai/basic_usage/send_request.html
@@ -49,53 +35,66 @@ python3 -m sglang.launch_server --model-path {LIO_model_paths[0]} --dtype float1
 wait_for_server(f"http://localhost:{port}")
 client = openai.Client(base_url=f"http://127.0.0.1:{port}/v1", api_key="None")
 
-# Below Code Block From: https://docs.sglang.ai/advanced_features/speculative_decoding.html
-response = client.chat.completions.create(
-    model=LIO_model_paths[0],
-    messages=[
-        {"role": "user", "content": LIO_prompt},
-    ],
-    temperature=0.0,
-    max_tokens=2048,
-)
+for task in tasks_set:
 
-# Reference for below code line: https://stackoverflow.com/questions/77444332/openai-python-package-error-chatcompletion-object-is-not-subscriptable 
-LIO_output = response.choices[0].message.content
+    LIO_prompt = f"Generate optimal hyperparameters for EAGLE-3 speculative decoding with SGLANG, where the \
+                base model to be used is {base_model_paths[0]}, the EAGLE-3 model to be used is {EAGLE_model_paths[0]}, \
+                the dataset to be tested on is Spec-Bench and the specific task type is {task}. Choose hyperparameters that \
+                optimise acceptance length, tokens generated per second and wall-time speedup. Provide as many hyperparameters \
+                as necessary for maximum performance. Generate the hyperparameters in the format: \
+                --hyperparameter_name1 value --hyperparameter_name2 value and so on. Before providing the hyperparameters, \
+                put a #START delimiter, and when finished, put a #END delimiter."
+
+    # Below Code Block From: https://docs.sglang.ai/advanced_features/speculative_decoding.html
+    response = client.chat.completions.create(
+        model=LIO_model_paths[0],
+        messages=[
+            {"role": "user", "content": LIO_prompt},
+        ],
+        temperature=0.0,
+        max_tokens=2048,
+    )
+
+    # Reference for below code line: https://stackoverflow.com/questions/77444332/openai-python-package-error-chatcompletion-object-is-not-subscriptable 
+    LIO_output = response.choices[0].message.content
+    LIO_output = Data.extract_LIO_response(LIO_output)
+    optim_params[task] = LIO_output
 
 # Below Code Line From: https://docs.sglang.ai/advanced_features/speculative_decoding.html
 terminate_process(server_process)
 
-LIO_output = Data.extract_LIO_response(LIO_output)
+servers = {}
 
-# Preparing SGLANG with EAGLE3
-# Below Code Block From: https://docs.sglang.ai/advanced_features/speculative_decoding.html
-server_process, port = launch_server_cmd(
-    f"""
-python3 -m sglang.launch_server --model {base_model_paths[0]}  --speculative-algorithm EAGLE3 \
-    --speculative-draft-model-path {EAGLE_model_paths[0]} {LIO_output} --dtype float16
-"""
-)
+for task in optim_params:
+    # Preparing SGLANG with EAGLE3
+    # Below Code Block From: https://docs.sglang.ai/advanced_features/speculative_decoding.html
+    server_process, port = launch_server_cmd(
+        f"""
+    python3 -m sglang.launch_server --model {base_model_paths[0]}  --speculative-algorithm EAGLE3 \
+        --speculative-draft-model-path {EAGLE_model_paths[0]} {optim_params[task]} --dtype float16
+    """
+    )
 
-# Below Code Block From: https://docs.sglang.ai/advanced_features/speculative_decoding.html
-wait_for_server(f"http://localhost:{port}")
-client = openai.Client(base_url=f"http://127.0.0.1:{port}/v1", api_key="None")
+    # Below Code Block From: https://docs.sglang.ai/advanced_features/speculative_decoding.html
+    wait_for_server(f"http://localhost:{port}")
+    client = openai.Client(base_url=f"http://127.0.0.1:{port}/v1", api_key="None")
+
+    servers[task] = [server_process, port, client]
 
 
 LIO_outputs = []
 # Hyperparameters
 summarise = False
-ranked_retrieve = False
 test_runs = 1
 max_new_tokens = 128
 temp = 0.0
 
 print("\nEvaluation Settings Chosen:")
-print("Dataset: ", dataset)
+print("Dataset: Spec-Bench")
 print("Test Runs: ", test_runs)
 print("Max New Tokens: ", max_new_tokens)
 print("Temperature: ", temp)
-print("Summarise: ", summarise)
-print("Ranked Retrieve: ", ranked_retrieve, "\n")
+print("Summarise: ", summarise, "\n")
 
 # LIO Assessment Loop
 wall_times = []
@@ -110,18 +109,12 @@ for test_run in range(test_runs):
         print("Test Question: ", run)
         run += 1
 
-        if dataset == "THUDM/LongBench":
-            prompt = prompts[i][0] + "\n" + prompts[i][1]
-        elif dataset == "PKU-Alignment/Align-Anything-Instruction-100K-zh":
-            prompt = prompts[i]
-        elif dataset == "Spec-Bench":
-            prompt = prompts[i][0]
+        prompt = prompts[i][0]
 
         if summarise == True:
-            prompt = Compress.summarise_text(prompts[i][0]) + "\n" + prompts[i][1]
-        elif ranked_retrieve == True:
-            prompt = Compress.ranked_retrieve(prompts[i][0], prompts[i][1]) + "\n" + prompts[i][1]
+            prompt = Compress.summarise_text(prompts[i][0])
         
+        server_process, port, client = servers[tasks[i]]
         start = time.perf_counter_ns()
 
         # Below Code Block From: https://docs.sglang.ai/advanced_features/speculative_decoding.html
@@ -157,23 +150,24 @@ for test_run in range(test_runs):
         LIO_outputs.append(output)
 
 # Print LIO Results
-print(f"LIO Results for {LIO_model_paths[0]}:")
-print(f"Dataset: {dataset}")
+print(f"LIO Spec-Bench Results for {LIO_model_paths[0]}:")
+print(f"Dataset: Spec-Bench")
 print(f"EAGLE Model: {EAGLE_model_paths[0]}")
 print(f"Base Model: {base_model_paths[0]}")
 print("Mean Wall Time (ns): ", np.mean(wall_times))
 print("Mean Tokens Generated/s: ", np.mean(token_rates))
 
-# Below Code Line From: https://docs.sglang.ai/advanced_features/speculative_decoding.html
-terminate_process(server_process)
+for task in servers:
+    server_process, port, client = servers[task]
+
+    # Below Code Line From: https://docs.sglang.ai/advanced_features/speculative_decoding.html
+    terminate_process(server_process)
 
 compression_tag = ""
 if summarise == True:
     compression_tag = "_Summ"
-elif ranked_retrieve == True:
-    compression_tag = "_RR"
 
-output_name = f"LIO_Output_{LIO_model_paths[0].replace("/", "-")}_{EAGLE_model_paths[0].replace("/", "-")}{compression_tag}.jsonl" 
+output_name = f"LIO_SB_Output_{LIO_model_paths[0].replace("/", "-")}_{EAGLE_model_paths[0].replace("/", "-")}{compression_tag}.jsonl" 
  
 # Below Code Block From: https://github.com/sgl-project/SpecForge/blob/main/scripts/prepare_data.py
 with open(output_name, "x") as f:
@@ -190,7 +184,7 @@ plt.plot(output_tokens, token_rates)
 plt.savefig("OutputTokens_vs_TokenRates.png")
 
 
-print("\n\n*******************************\nFinished Running LIO_Test.py\n\n")
+print("\n\n*******************************\nFinished Running LIO_SpecBench_Test.py\n\n")
 
 ''' 
 References
