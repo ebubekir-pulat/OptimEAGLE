@@ -131,7 +131,7 @@ compression_tag = ""
 if summarise == True:
     compression_tag = "_Summ"
 elif ranked_retrieve == True:
-    compression_tag == "_RR"
+    compression_tag = "_RR"
 
 if eagle3 == True:
     output_name = f"LBE_Output_EAGLE3_{EAGLE_model_paths[0].replace("/", "-")}{compression_tag}.jsonl" 
