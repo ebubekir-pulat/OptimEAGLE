@@ -1,8 +1,6 @@
 # Standard EAGLE-3 SGLANG
 # Hyperparameters: dataset, test_runs, max_new_tokens, temp
 
-print("\n\n*******************************\nStarting EAGLE3_SGLANG.py\n\n")
-
 import time
 import numpy as np
 import json
@@ -12,124 +10,130 @@ import openai
 import Data
 import hashlib
 from matplotlib import pyplot as plt
+import sys
 
-base_model_paths = ["Qwen/Qwen3-8B"]
-EAGLE_model_paths = ["Tengyunw/qwen3_8b_eagle3"]
+def main(dataset):
+    print("\n\n*******************************\nStarting EAGLE3_SGLANG.py\n\n")
 
-# Hyperparameter
-dataset = "THUDM/LongBench"
-if dataset == "THUDM/LongBench":
-    prompts = Data.longbench_e()
-elif dataset == "PKU-Alignment/Align-Anything-Instruction-100K-zh":
-    prompts = Data.aai_dataset()
-elif dataset == "SpecBench":
-    prompts = Data.specbench()
+    base_model_paths = ["Qwen/Qwen3-8B"]
+    EAGLE_model_paths = ["Tengyunw/qwen3_8b_eagle3"]
 
-# Preparing SGLANG with EAGLE3
-# Below Code Block From: https://docs.sglang.ai/advanced_features/speculative_decoding.html
-server_process, port = launch_server_cmd(
-    f"""
-python3 -m sglang.launch_server --model {base_model_paths[0]}  --speculative-algorithm EAGLE3 \
-    --speculative-draft-model-path {EAGLE_model_paths[0]} --dtype float16
-"""
-)
+    if dataset == "THUDM/LongBench":
+        prompts = Data.longbench_e()
+    elif dataset == "PKU-Alignment/Align-Anything-Instruction-100K-zh":
+        prompts = Data.aai_dataset()
+    elif dataset == "SpecBench":
+        prompts = Data.specbench()
+    else:
+        raise Exception
 
-# Below Code Block From: https://docs.sglang.ai/advanced_features/speculative_decoding.html
-wait_for_server(f"http://localhost:{port}")
-client = openai.Client(base_url=f"http://127.0.0.1:{port}/v1", api_key="None")
+    # Preparing SGLANG with EAGLE3
+    # Below Code Block From: https://docs.sglang.ai/advanced_features/speculative_decoding.html
+    server_process, port = launch_server_cmd(
+        f"""
+    python3 -m sglang.launch_server --model {base_model_paths[0]}  --speculative-algorithm EAGLE3 \
+        --speculative-draft-model-path {EAGLE_model_paths[0]} --dtype float16
+    """
+    )
 
-eagle3_outputs = []
-# Hyperparameters
-test_runs = 1
-max_new_tokens = 128
-temp = 0.0
+    # Below Code Block From: https://docs.sglang.ai/advanced_features/speculative_decoding.html
+    wait_for_server(f"http://localhost:{port}")
+    client = openai.Client(base_url=f"http://127.0.0.1:{port}/v1", api_key="None")
 
-print("\nEvaluation Settings Chosen:")
-print("Dataset: ", dataset)
-print("Test Runs: ", test_runs)
-print("Max New Tokens: ", max_new_tokens)
-print("Temperature: ", temp)
+    eagle3_outputs = []
+    # Hyperparameters
+    test_runs = 3
+    max_new_tokens = 2048
+    temp = 0.0
 
-# EAGLE3 Assessment Loop
-wall_times = []
-token_rates = []
-input_tokens = []
-output_tokens = []
+    print("\nEvaluation Settings Chosen:")
+    print("Dataset: ", dataset)
+    print("Test Runs: ", test_runs)
+    print("Max New Tokens: ", max_new_tokens)
+    print("Temperature: ", temp)
 
-for test_run in range(test_runs):
-    run = 1
-    for i in range(len(prompts)):
-        print("Test Run: ", test_run)
-        print("Test Question: ", run)
-        run += 1
+    # EAGLE3 Assessment Loop
+    wall_times = []
+    token_rates = []
+    input_tokens = []
+    output_tokens = []
 
-        if dataset == "THUDM/LongBench":
-            prompt = prompts[i][0] + "\n" + prompts[i][1]
-        elif dataset == "PKU-Alignment/Align-Anything-Instruction-100K-zh":
-            prompt = prompts[i]
-        elif dataset == "SpecBench":
-            prompt = prompts[i][0]
-        
-        start = time.perf_counter_ns()
+    for test_run in range(test_runs):
+        run = 1
+        for i in range(len(prompts)):
+            print("Test Run: ", test_run)
+            print("Test Question: ", run)
+            run += 1
 
-        # Below Code Block From: https://docs.sglang.ai/advanced_features/speculative_decoding.html
-        response = client.chat.completions.create(
-            model=base_model_paths[0],
-            messages=[
-                {"role": "user", "content": prompt},
-            ],
-            temperature=temp,
-            max_tokens=max_new_tokens,
-        )
+            if dataset == "THUDM/LongBench":
+                prompt = prompts[i][0] + "\n" + prompts[i][1]
+            elif dataset == "PKU-Alignment/Align-Anything-Instruction-100K-zh":
+                prompt = prompts[i]
+            elif dataset == "SpecBench":
+                prompt = prompts[i][0]
+            
+            start = time.perf_counter_ns()
 
-        finish = time.perf_counter_ns()
+            # Below Code Block From: https://docs.sglang.ai/advanced_features/speculative_decoding.html
+            response = client.chat.completions.create(
+                model=base_model_paths[0],
+                messages=[
+                    {"role": "user", "content": prompt},
+                ],
+                temperature=temp,
+                max_tokens=max_new_tokens,
+            )
 
-        # Reference for below code line: https://stackoverflow.com/questions/77444332/openai-python-package-error-chatcompletion-object-is-not-subscriptable 
-        eagle3_output = response.choices[0].message.content
-        
-        elapsed = finish - start
-        wall_times.append(elapsed)
+            finish = time.perf_counter_ns()
 
-        new_tokens = response.usage.completion_tokens
-        tokens_per_second = new_tokens / (elapsed * pow(10, -9))
-        token_rates.append(tokens_per_second)
-        output_tokens.append(new_tokens)
+            # Reference for below code line: https://stackoverflow.com/questions/77444332/openai-python-package-error-chatcompletion-object-is-not-subscriptable 
+            eagle3_output = response.choices[0].message.content
+            
+            elapsed = finish - start
+            wall_times.append(elapsed)
 
-        input_tokens.append(response.usage.prompt_tokens)
+            new_tokens = response.usage.completion_tokens
+            tokens_per_second = new_tokens / (elapsed * pow(10, -9))
+            token_rates.append(tokens_per_second)
+            output_tokens.append(new_tokens)
 
-        # Below Code Block From: https://github.com/sgl-project/SpecForge/blob/main/scripts/prepare_data.py
-        output = {
-            "id": hashlib.md5((str(test_run) + prompt + eagle3_output).encode()).hexdigest(),
-            "output": eagle3_output
-        }
-        eagle3_outputs.append(output)
+            input_tokens.append(response.usage.prompt_tokens)
 
-# Print EAGLE-3 Results
-print(f"EAGLE-3 for {EAGLE_model_paths[0]}:")
-print("Mean Wall Time (ns): ", np.mean(wall_times))
-print("Mean Tokens Generated/s: ", np.mean(token_rates))
+            # Below Code Block From: https://github.com/sgl-project/SpecForge/blob/main/scripts/prepare_data.py
+            output = {
+                "id": hashlib.md5((str(test_run) + prompt + eagle3_output).encode()).hexdigest(),
+                "output": eagle3_output
+            }
+            eagle3_outputs.append(output)
 
-# Below Code Line From: https://docs.sglang.ai/advanced_features/speculative_decoding.html
-terminate_process(server_process)
+    # Print EAGLE-3 Results
+    print(f"EAGLE-3 for {EAGLE_model_paths[0]}:")
+    print("Mean Wall Time (ns): ", np.mean(wall_times))
+    print("Mean Tokens Generated/s: ", np.mean(token_rates))
 
-output_name = f"EAGLE3_Output_{EAGLE_model_paths[0].replace("/", "-")}_{dataset.replace("/", "-")}.jsonl" 
+    # Below Code Line From: https://docs.sglang.ai/advanced_features/speculative_decoding.html
+    terminate_process(server_process)
 
-# Below Code Block From: https://github.com/sgl-project/SpecForge/blob/main/scripts/prepare_data.py
-with open(output_name, "x") as f:
-    for output in eagle3_outputs:
-        f.write(json.dumps(output) + "\n")
+    output_name = f"EAGLE3_Output_{EAGLE_model_paths[0].replace('/', '-')}_{dataset.replace('/', '-')}.jsonl" 
 
-# Final Plots
-plt.title("Input Tokens vs Token Rates")
-plt.plot(input_tokens, token_rates)
-plt.savefig("InputTokens_vs_TokenRates.png")
+    # Below Code Block From: https://github.com/sgl-project/SpecForge/blob/main/scripts/prepare_data.py
+    with open(output_name, "x") as f:
+        for output in eagle3_outputs:
+            f.write(json.dumps(output) + "\n")
 
-plt.title("Output Tokens vs Token Rates")
-plt.plot(output_tokens, token_rates)
-plt.savefig("OutputTokens_vs_TokenRates.png")
+    # Final Plots
+    plt.title("Input Tokens vs Token Rates")
+    plt.plot(input_tokens, token_rates)
+    plt.savefig("InputTokens_vs_TokenRates.png")
 
+    plt.title("Output Tokens vs Token Rates")
+    plt.plot(output_tokens, token_rates)
+    plt.savefig("OutputTokens_vs_TokenRates.png")
 
-print("\n\n*******************************\nFinished Running EAGLE3_SGLANG.py\n\n")
+    print("\n\n*******************************\nFinished Running EAGLE3_SGLANG.py\n\n")
+
+if __name__ == "__main__":
+    main(sys.argv[1])
 
 ''' 
 References

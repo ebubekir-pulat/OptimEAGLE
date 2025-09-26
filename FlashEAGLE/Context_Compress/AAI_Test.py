@@ -2,8 +2,6 @@
 # Translation
 # Hyperparameters: eagle3, translate, test_runs, max_new_tokens, temp
 
-print("\n\n*******************************\nStarting AAI_Test.py\n\n")
-
 import time
 import numpy as np
 import json
@@ -17,6 +15,8 @@ from matplotlib import pyplot as plt
 import sys
 
 def main(eagle3, translate):
+    print("\n\n*******************************\nStarting AAI_Test.py\n\n")
+
     base_model_paths = ["deepseek-ai/DeepSeek-R1-Distill-Llama-8B"]
     EAGLE_model_paths = ["yuhuili/EAGLE3-DeepSeek-R1-Distill-LLaMA-8B"]
 
