@@ -13,9 +13,22 @@ import Compress
 import hashlib
 from matplotlib import pyplot as plt
 import sys
+import subprocess
 
 def main(eagle3, translate):
     print("\n\n*******************************\nStarting AAI_Test.py\n\n")
+
+    subprocess.run(
+        ["pip", "install", "uv"], check=True
+    )
+
+    subprocess.run(
+        ["uv", "pip", "install", '"sglang[all]>=0.5.3rc0"'], check=True
+    )
+
+    subprocess.run(
+        ["sudo", "apt-get", "install", "-y", "numactl"], check=True
+    )
 
     base_model_paths = ["deepseek-ai/DeepSeek-R1-Distill-Llama-8B"]
     EAGLE_model_paths = ["yuhuili/EAGLE3-DeepSeek-R1-Distill-LLaMA-8B"]
