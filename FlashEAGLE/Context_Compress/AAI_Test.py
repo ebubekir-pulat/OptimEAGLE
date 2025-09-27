@@ -2,6 +2,20 @@
 # Translation
 # Hyperparameters: eagle3, translate, test_runs, max_new_tokens, temp
 
+import subprocess
+
+subprocess.run(
+    ["pip", "install", "uv"], check=True
+)
+
+subprocess.run(
+    ["uv", "pip", "install", "sglang[all]>=0.5.3rc0"], check=True
+)
+
+subprocess.run(
+    ["nvidia-smi"], check=True
+)
+
 import time
 import numpy as np
 import json
@@ -11,32 +25,15 @@ import openai
 import Data
 import Compress
 import hashlib
-from matplotlib import pyplot as plt
 import sys
-import subprocess
 
 def main(eagle3, translate):
     print("\n\n*******************************\nStarting AAI_Test.py\n\n")
-
-    subprocess.run(
-        ["pip", "install", "uv"], check=True
-    )
-
-    subprocess.run(
-        ["uv", "pip", "install", '"sglang[all]>=0.5.3rc0"'], check=True
-    )
-
-    subprocess.run(
-        ["sudo", "apt-get", "install", "-y", "numactl"], check=True
-    )
 
     base_model_paths = ["deepseek-ai/DeepSeek-R1-Distill-Llama-8B"]
     EAGLE_model_paths = ["yuhuili/EAGLE3-DeepSeek-R1-Distill-LLaMA-8B"]
 
     aai_ds = Data.aai_dataset()
-
-    # Hyperparameter
-    eagle3 = True
 
     if eagle3 == True:
         # Preparing SGLANG with EAGLE3
@@ -60,7 +57,6 @@ def main(eagle3, translate):
     # Below Code Block From: https://docs.sglang.ai/advanced_features/speculative_decoding.html
     wait_for_server(f"http://localhost:{port}")
     client = openai.Client(base_url=f"http://127.0.0.1:{port}/v1", api_key="None")
-
 
     AAI_outputs = []
     # Hyperparameters
@@ -154,22 +150,15 @@ def main(eagle3, translate):
         for output in AAI_outputs:
             f.write(json.dumps(output) + "\n")
 
-
-    # Final Plots
-    plt.title("Input Tokens vs Token Rates")
-    plt.plot(input_tokens, token_rates)
-    plt.savefig("InputTokens_vs_TokenRates.png")
-
-    plt.title("Output Tokens vs Token Rates")
-    plt.plot(output_tokens, token_rates)
-    plt.savefig("OutputTokens_vs_TokenRates.png")
-
+    print("Input Tokens: ", input_tokens)
+    print("Output Tokens: ", output_tokens)
+    print("Tokens Generated Per Second: ", token_rates)
 
     print("\n\n*******************************\nFinished Running AAI_Test.py\n\n")
 
 
 if __name__ == "__main__":
-    main(sys.argv[1], sys.argv[2])
+    main(bool(sys.argv[1]), bool(sys.argv[2]))
 
 
 ''' 
