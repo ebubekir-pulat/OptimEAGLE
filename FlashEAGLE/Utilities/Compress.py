@@ -12,13 +12,13 @@ translate_tokenizer = T5Tokenizer.from_pretrained(model_name)
 
 def zh_to_en(text):
     # Reference for below code block: https://huggingface.co/utrobinmv/t5_translate_en_ru_zh_small_1024
-    input_ids = translate_tokenizer(text, return_tensors="pt")
+    input_ids = translate_tokenizer("translate to en: " + text, return_tensors="pt")
     generated_tokens = translate_model.generate(**input_ids.to('cuda'))
     return translate_tokenizer.batch_decode(generated_tokens, skip_special_tokens=True) 
 
 def en_to_zh(text):
     # Reference for below code block: https://huggingface.co/utrobinmv/t5_translate_en_ru_zh_small_1024
-    input_ids = translate_tokenizer(text, return_tensors="pt")
+    input_ids = translate_tokenizer("translate to zh: " + text, return_tensors="pt")
     generated_tokens = translate_model.generate(**input_ids.to('cuda'))
     return translate_tokenizer.batch_decode(generated_tokens, skip_special_tokens=True) 
 
