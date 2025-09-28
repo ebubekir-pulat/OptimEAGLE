@@ -30,8 +30,14 @@ import sys
 def main(eagle3, translate):
     print("\n\n*******************************\nStarting AAI_Test.py\n\n")
 
-    base_model_paths = ["deepseek-ai/DeepSeek-R1-Distill-Llama-8B"]
-    EAGLE_model_paths = ["yuhuili/EAGLE3-DeepSeek-R1-Distill-LLaMA-8B"]
+    print("Python Version:")
+
+    subprocess.run(
+        ["python", "--version"], check=True
+    )
+
+    base_model_paths = ["Qwen/Qwen3-8B"]
+    EAGLE_model_paths = ["Tengyunw/qwen3_8b_eagle3"]
 
     aai_ds = Data.aai_dataset()
 
@@ -53,7 +59,6 @@ def main(eagle3, translate):
         """
         )
 
-
     # Below Code Block From: https://docs.sglang.ai/advanced_features/speculative_decoding.html
     wait_for_server(f"http://localhost:{port}")
     client = openai.Client(base_url=f"http://127.0.0.1:{port}/v1", api_key="None")
@@ -61,7 +66,7 @@ def main(eagle3, translate):
     AAI_outputs = []
     # Hyperparameters
     test_runs = 3
-    max_new_tokens = 2048
+    max_new_tokens = 512
     temp = 0.0
 
     print("\nEvaluation Settings Chosen:")
@@ -150,9 +155,15 @@ def main(eagle3, translate):
         for output in AAI_outputs:
             f.write(json.dumps(output) + "\n")
 
-    print("Input Tokens: ", input_tokens)
-    print("Output Tokens: ", output_tokens)
-    print("Tokens Generated Per Second: ", token_rates)
+    print("Input Tokens Array: ", input_tokens)
+    print("Output Tokens Array: ", output_tokens)
+    print("Tokens Generated Per Second Array: ", token_rates)
+
+    print("\n\nOutput Data: \n")
+
+    subprocess.run(
+        ["cat", f"{output_name}"], check=True
+    )
 
     print("\n\n*******************************\nFinished Running AAI_Test.py\n\n")
 
@@ -164,24 +175,23 @@ if __name__ == "__main__":
 ''' 
 References
 
-1. DeepSeek-AI, “Deepseek-r1: Incentivizing reasoning capability in llms via reinforcement learning,” 2025.
-[Online]. Available: https://arxiv.org/abs/2501.12948
-
-2. Y. Li, F. Wei, C. Zhang, and H. Zhang, “EAGLE: Speculative sampling requires rethinking feature
+1. Y. Li, F. Wei, C. Zhang, and H. Zhang, “EAGLE: Speculative sampling requires rethinking feature
 uncertainty,” in Proceedings of the 41st International Conference on Machine Learning, ser. Proceedings
 of Machine Learning Research, R. Salakhutdinov, Z. Kolter, K. Heller, A. Weller, N. Oliver, J. Scarlett,
 and F. Berkenkamp, Eds., vol. 235. PMLR, 21–27 Jul 2024, pp. 28 935–28 948. [Online]. Available:
 https://proceedings.mlr.press/v235/li24bt.html
 
-3. Y. Li, F. Wei, C. Zhang, and H. Zhang, “EAGLE-2: Faster inference of language models with dynamic
+2. Y. Li, F. Wei, C. Zhang, and H. Zhang, “EAGLE-2: Faster inference of language models with dynamic
 draft trees,” in Proceedings of the 2024 Conference on Empirical Methods in Natural Language Processing,
 Y. Al-Onaizan, M. Bansal, and Y.-N. Chen, Eds. Miami, Florida, USA: Association for Computational
 Linguistics, Nov. 2024, pp. 7421–7432. [Online]. Available: https://aclanthology.org/2024.emnlp-main.422/
 
-4. Y. Li, F. Wei, C. Zhang, and H. Zhang, “Eagle-3: Scaling up inference acceleration of large language models
+3. Y. Li, F. Wei, C. Zhang, and H. Zhang, “Eagle-3: Scaling up inference acceleration of large language models
 via training-time test,” 2025. [Online]. Available: https://arxiv.org/abs/2503.01840
 
-5. C. W. F. Y. S. S. Y. W. Y. Z. Y. H. H. Z. Y. Z. Shenggui Li, Yikai Zhu, “Specforge: Train speculative decoding
+4. C. W. F. Y. S. S. Y. W. Y. Z. Y. H. H. Z. Y. Z. Shenggui Li, Yikai Zhu, “Specforge: Train speculative decoding
 models effortlessly,” https://github.com/sgl-project/specforge, 2025.
+
+5. Q. Team, “Qwen3 technical report,” 2025. [Online]. Available: https://arxiv.org/abs/2505.09388
 
 '''
