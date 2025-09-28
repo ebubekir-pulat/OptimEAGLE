@@ -169,9 +169,8 @@ def main(eagle3, translate):
 
     print("\n\nOutput Data: \n")
 
-    subprocess.run(
-        ["cat", f"{output_name}"], check=True
-    )
+    for output in AAI_outputs:
+        print(output)
 
     print("\n\n*******************************\nFinished Running AAI_Test.py\n\n")
 
