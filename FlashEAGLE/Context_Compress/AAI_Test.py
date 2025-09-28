@@ -5,12 +5,16 @@
 import subprocess
 
 subprocess.run(
-    ["pip", "install", "uv"], check=True
+    ["pip", "install", "numpy==1.26.4"], check=True
 )
 
-subprocess.run(
-    ["uv", "pip", "install", "sglang[all]>=0.5.3rc0"], check=True
-)
+#subprocess.run(
+#    ["pip", "install", "uv"], check=True
+#)
+
+#subprocess.run(
+#    ["uv", "pip", "install", "sglang[all]>=0.5.3rc0"], check=True
+#)
 
 subprocess.run(
     ["nvidia-smi"], check=True
