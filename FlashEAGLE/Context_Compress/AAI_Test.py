@@ -5,6 +5,10 @@
 import subprocess
 
 subprocess.run(
+    ["sudo", "apt-get", "install", "libnuma-dev"], check=True
+)
+
+subprocess.run(
     ["pip", "install", "uv"], check=True
 )
 
