@@ -4,6 +4,10 @@
 
 import subprocess
 
+#subprocess.run(
+#    ["sudo", "apt-get", "install", "libnuma-dev"], check=True
+#)
+
 subprocess.run(
     ["pip", "install", "uv"], check=True
 )
@@ -29,6 +33,12 @@ import sys
 
 def main(eagle3, summarise, ranked_retrieve):
     print("\n\n*******************************\nStarting Longbench_E_Test.py\n\n")
+
+    print("Python Version:")
+
+    subprocess.run(
+        ["python", "--version"], check=True
+    )
 
     base_model_paths = ["Qwen/Qwen3-8B"]
     EAGLE_model_paths = ["Tengyunw/qwen3_8b_eagle3"]
@@ -155,6 +165,11 @@ def main(eagle3, summarise, ranked_retrieve):
     print("Input Tokens: ", input_tokens)
     print("Output Tokens: ", output_tokens)
     print("Tokens Generated Per Second: ", token_rates)
+
+    print("\n\nOutput Data: \n")
+
+    for output in LB_outputs:
+        print(output)
 
     print("\n\n*******************************\nFinished Running Longbench_E_Test.py\n\n")
 
