@@ -24,23 +24,19 @@ def en_to_zh(text):
 
 
 # Preparing Summariser
-# Below Code Block From: https://huggingface.co/pszemraj/long-t5-tglobal-base-16384-book-summary
-summariser = pipeline(
-    "summarization",
-    "pszemraj/long-t5-tglobal-base-16384-book-summary",
-    device=0 if torch.cuda.is_available() else -1,
-)
+# Below Code Line From: https://huggingface.co/PeterBanning71/long-t5-tfg?library=transformers
+summariser = pipeline("summarization", model="PeterBanning71/long-t5-tfg")
 
 def summarise_text(text):
-    # Below Code Block From: https://huggingface.co/pszemraj/long-t5-tglobal-base-16384-book-summary
-    summed_text = summariser(text)
-    return summed_text[0]["summary_text"]
+    # Below Code Line From: https://huggingface.co/pszemraj/long-t5-tglobal-base-16384-book-summary, https://huggingface.co/facebook/bart-large-cnn
+    return summariser(text)[0]["summary_text"]
 
+nltk.download('punkt_tab')
 
 # Ranked Retrieval
 # Below code block from: https://huggingface.co/tomaarsen/Qwen3-Reranker-0.6B-seq-cls
 rr_tokenizer = AutoTokenizer.from_pretrained("tomaarsen/Qwen3-Reranker-0.6B-seq-cls", padding_side="left")
-rr_model = AutoModelForSequenceClassification.from_pretrained("tomaarsen/Qwen3-Reranker-0.6B-seq-cls", torch_dtype=torch.float16).cuda().eval()
+rr_model = AutoModelForSequenceClassification.from_pretrained("tomaarsen/Qwen3-Reranker-0.6B-seq-cls", torch_dtype=torch.float16).eval()
 
 # Below code block from: https://huggingface.co/tomaarsen/Qwen3-Reranker-0.6B-seq-cls
 def format_instruction(instruction, query, doc):
@@ -71,13 +67,14 @@ def ranked_retrieve(context, question):
     )
     logits = rr_model(**inputs).logits.squeeze()
     relevancies = logits.sigmoid()
+    relevancies = relevancies.tolist()
     mean_relevancy = np.mean(relevancies)
 
     return_context = ""
 
     for i in range(len(relevancies)):
         if relevancies[i] >= mean_relevancy:
-            return_context += context_sentences[i] + ". "
+            return_context += context_sentences[i] + " "
 
     return_context = return_context[:len(return_context) - 1]
     return return_context
@@ -89,12 +86,9 @@ References
 1. Bird, Steven, Edward Loper and Ewan Klein (2009).
 Natural Language Processing with Python.  O'Reilly Media Inc.
 
-2. Peter Szemraj, “long-t5-tglobal-base-16384-book-summary (revision 4b12bce),” 2022. [Online]. Available:
-https://huggingface.co/pszemraj/long-t5-tglobal-base-16384-book-summary
+2. Q. Team, “Qwen3-embedding,” May 2025. [Online]. Available: https://qwenlm.github.io/blog/qwen3/
 
-3. Q. Team, “Qwen3-embedding,” May 2025. [Online]. Available: https://qwenlm.github.io/blog/qwen3/
-
-4. T. Wolf, L. Debut, V. Sanh, J. Chaumond, C. Delangue, A. Moi, P. Cistac, T. Rault, R. Louf, M. Funtowicz,
+3. T. Wolf, L. Debut, V. Sanh, J. Chaumond, C. Delangue, A. Moi, P. Cistac, T. Rault, R. Louf, M. Funtowicz,
 J. Davison, S. Shleifer, P. von Platen, C. Ma, Y. Jernite, J. Plu, C. Xu, T. L. Scao, S. Gugger,
 M. Drame, Q. Lhoest, and A. M. Rush, “Transformers: State-of-the-art natural language processing,”
 in Proceedings of the 2020 Conference on Empirical Methods in Natural Language Processing: System
