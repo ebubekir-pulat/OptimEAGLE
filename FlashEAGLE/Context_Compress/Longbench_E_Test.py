@@ -2,6 +2,20 @@
 # Summarisation and Ranked Retrieval
 # Hyperparameters: eagle3, summarise, ranked_retrieve, test_runs, max_new_tokens, temp
 
+import subprocess
+
+subprocess.run(
+    ["pip", "install", "uv"], check=True
+)
+
+subprocess.run(
+    ["uv", "pip", "install", "sglang[all]>=0.5.3rc0"], check=True
+)
+
+subprocess.run(
+    ["nvidia-smi"], check=True
+)
+
 import time
 import numpy as np
 import json
@@ -11,24 +25,10 @@ import openai
 import Data
 import Compress
 import hashlib
-from matplotlib import pyplot as plt
 import sys
-import subprocess
 
 def main(eagle3, summarise, ranked_retrieve):
     print("\n\n*******************************\nStarting Longbench_E_Test.py\n\n")
-
-    subprocess.run(
-        ["pip", "install", "uv"], check=True
-    )
-
-    subprocess.run(
-        ["uv", "pip", "install", '"sglang[all]>=0.5.3rc0"'], check=True
-    )
-
-    subprocess.run(
-        ["sudo", "apt-get", "install", "-y", "numactl"], check=True
-    )
 
     base_model_paths = ["Qwen/Qwen3-8B"]
     EAGLE_model_paths = ["Tengyunw/qwen3_8b_eagle3"]
@@ -57,7 +57,6 @@ def main(eagle3, summarise, ranked_retrieve):
     # Below Code Block From: https://docs.sglang.ai/advanced_features/speculative_decoding.html
     wait_for_server(f"http://localhost:{port}")
     client = openai.Client(base_url=f"http://127.0.0.1:{port}/v1", api_key="None")
-
 
     LB_outputs = []
     # Hyperparameters
@@ -153,21 +152,14 @@ def main(eagle3, summarise, ranked_retrieve):
         for output in LB_outputs:
             f.write(json.dumps(output) + "\n")
 
-
-    # Final Plots
-    plt.title("Input Tokens vs Token Rates")
-    plt.plot(input_tokens, token_rates)
-    plt.savefig("InputTokens_vs_TokenRates.png")
-
-    plt.title("Output Tokens vs Token Rates")
-    plt.plot(output_tokens, token_rates)
-    plt.savefig("OutputTokens_vs_TokenRates.png")
-
+    print("Input Tokens: ", input_tokens)
+    print("Output Tokens: ", output_tokens)
+    print("Tokens Generated Per Second: ", token_rates)
 
     print("\n\n*******************************\nFinished Running Longbench_E_Test.py\n\n")
 
 if __name__ == "__main__":
-    main(sys.argv[1], sys.argv[2], sys.argv[3])
+    main(bool(sys.argv[1]), bool(sys.argv[2]), bool(sys.argv[3]))
 
 ''' 
 References

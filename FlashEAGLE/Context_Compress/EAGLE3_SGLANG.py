@@ -1,6 +1,20 @@
 # Standard EAGLE-3 SGLANG
 # Hyperparameters: dataset, test_runs, max_new_tokens, temp
 
+import subprocess
+
+subprocess.run(
+    ["pip", "install", "uv"], check=True
+)
+
+subprocess.run(
+    ["uv", "pip", "install", "sglang[all]>=0.5.3rc0"], check=True
+)
+
+subprocess.run(
+    ["nvidia-smi"], check=True
+)
+
 import time
 import numpy as np
 import json
@@ -9,24 +23,10 @@ from sglang.utils import wait_for_server, terminate_process
 import openai
 import Data
 import hashlib
-from matplotlib import pyplot as plt
 import sys
-import subprocess
 
 def main(dataset):
     print("\n\n*******************************\nStarting EAGLE3_SGLANG.py\n\n")
-
-    subprocess.run(
-        ["pip", "install", "uv"], check=True
-    )
-
-    subprocess.run(
-        ["uv", "pip", "install", '"sglang[all]>=0.5.3rc0"'], check=True
-    )
-
-    subprocess.run(
-        ["sudo", "apt-get", "install", "-y", "numactl"], check=True
-    )
 
     base_model_paths = ["Qwen/Qwen3-8B"]
     EAGLE_model_paths = ["Tengyunw/qwen3_8b_eagle3"]
@@ -134,14 +134,9 @@ def main(dataset):
         for output in eagle3_outputs:
             f.write(json.dumps(output) + "\n")
 
-    # Final Plots
-    plt.title("Input Tokens vs Token Rates")
-    plt.plot(input_tokens, token_rates)
-    plt.savefig("InputTokens_vs_TokenRates.png")
-
-    plt.title("Output Tokens vs Token Rates")
-    plt.plot(output_tokens, token_rates)
-    plt.savefig("OutputTokens_vs_TokenRates.png")
+    print("Input Tokens: ", input_tokens)
+    print("Output Tokens: ", output_tokens)
+    print("Tokens Generated Per Second: ", token_rates)
 
     print("\n\n*******************************\nFinished Running EAGLE3_SGLANG.py\n\n")
 
