@@ -8,6 +8,6 @@ job_id = client.submit_job(
     runtime_env={"working_dir": "./", "pip":["datasets==3.6.0", "nltk"]},
     entrypoint_num_gpus=1,
     entrypoint_num_cpus=12,
-    submission_id="OptimEAGLE-AAI-Test-Official-EAGLE3-NoSumm-NoRR-1"
+    submission_id="OptimEAGLE-LBE-Test-Official-EAGLE3-NoSumm-NoRR-1"
 )
 print(job_id)
