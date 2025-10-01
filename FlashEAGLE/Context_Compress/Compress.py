@@ -59,12 +59,11 @@ def ranked_retrieve(context, input):
         # Reference for below code block: https://huggingface.co/cross-encoder/ms-marco-MiniLM-L6-v2
         features = rr_tokenizer([input], [sentence],  padding=True, truncation=True, return_tensors="pt")    
         with torch.no_grad():
-            scores = rr_model(**features).logits
-            print(scores)
-            relevancies.append(scores[0])
+            score = rr_model(**features).logits
+            print(score)
+            relevancies.append(score[0])
 
     mean_relevancy = np.mean(relevancies)
-
     return_context = ""
 
     for i in range(len(relevancies)):

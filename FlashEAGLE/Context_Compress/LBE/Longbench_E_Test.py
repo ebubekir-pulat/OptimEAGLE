@@ -1,6 +1,6 @@
 # Context Compression Testing on LongBench-E
-# Summarisation and Ranked Retrieval
-# Hyperparameters: eagle3, summarise, ranked_retrieve, test_runs, max_new_tokens, temp
+# Summarisation and Sentence Retrieval
+# Hyperparameters: eagle3, summarise, sentence_retrieve, retrieve_type, test_runs, max_new_tokens, temp
 
 import subprocess
 
@@ -31,7 +31,7 @@ import Compress
 import hashlib
 import sys
 
-def main(eagle3, summarise, ranked_retrieve):
+def main(eagle3, summarise, sentence_retrieve, retrieve_type):
     print("\n\n*******************************\nStarting Longbench_E_Test.py\n\n")
 
     if eagle3 == "True":
@@ -44,10 +44,10 @@ def main(eagle3, summarise, ranked_retrieve):
     else:
         summarise = False
 
-    if ranked_retrieve == "True":
-        ranked_retrieve = True
+    if sentence_retrieve == "True":
+        sentence_retrieve = True
     else:
-        ranked_retrieve = False
+        sentence_retrieve = False
 
     print("Python Version:")
 
@@ -59,7 +59,7 @@ def main(eagle3, summarise, ranked_retrieve):
     EAGLE_model_paths = ["Tengyunw/qwen3_8b_eagle3"]
 
     lb_prompts = Data.longbench_e()
-    print("Dataset Shape: ", np.shape(lb_prompts))
+    print("LongBench-E Dataset Shape: ", np.shape(lb_prompts))
 
     if eagle3 == True:
         # Preparing SGLANG with EAGLE3
@@ -96,7 +96,11 @@ def main(eagle3, summarise, ranked_retrieve):
     print("Max New Tokens: ", max_new_tokens)
     print("Temperature: ", temp)
     print("Summarise: ", summarise)
-    print("Ranked Retrieve: ", ranked_retrieve, "\n")
+    if sentence_retrieve == True:
+        print("Sentence Retrieve: ", sentence_retrieve)
+        print("Retrieve Type: ", retrieve_type, "\n")
+    else:
+        print("Sentence Retrieve: ", sentence_retrieve, "\n")
 
     # LongBench-E Assessment Loop
     wall_times = []
@@ -114,8 +118,11 @@ def main(eagle3, summarise, ranked_retrieve):
             prompt = lb_prompts[i][0] + "\n" + lb_prompts[i][1]
             if summarise == True:
                 prompt = Compress.summarise_text(lb_prompts[i][0]) + "\n" + lb_prompts[i][1]
-            elif ranked_retrieve == True:
-                prompt = Compress.ranked_retrieve(lb_prompts[i][0], lb_prompts[i][1]) + "\n" + lb_prompts[i][1]
+            elif sentence_retrieve == True:
+                if retrieve_type == "skip":
+                    prompt = Compress.sentence_retrieve(lb_prompts[i][0]) + "\n" + lb_prompts[i][1]
+                elif retrieve_type == "ranked":
+                    prompt = Compress.ranked_retrieve(lb_prompts[i][0], lb_prompts[i][1]) + "\n" + lb_prompts[i][1]
             
             start = time.perf_counter_ns()
 
@@ -165,8 +172,8 @@ def main(eagle3, summarise, ranked_retrieve):
     compression_tag = ""
     if summarise == True:
         compression_tag = "_Summ"
-    elif ranked_retrieve == True:
-        compression_tag = "_RR"
+    elif sentence_retrieve == True:
+        compression_tag = "_SR_" + retrieve_type 
 
     if eagle3 == True:
         output_name = f"LBE_Output_EAGLE3_{EAGLE_model_paths[0].replace('/', '-')}{compression_tag}.jsonl" 
@@ -179,9 +186,9 @@ def main(eagle3, summarise, ranked_retrieve):
             f.write(json.dumps(output) + "\n")
 
     print("Mean Input Tokens: ", np.mean(input_tokens))
-    print("Input Tokens: ", input_tokens)
-    print("Output Tokens: ", output_tokens)
-    print("Tokens Generated Per Second: ", token_rates)
+    print("Input Tokens Array: ", input_tokens)
+    print("Output Tokens Array: ", output_tokens)
+    print("Tokens Generated Per Second Array: ", token_rates)
 
     print("\n\nOutput Data: \n")
 
@@ -191,7 +198,7 @@ def main(eagle3, summarise, ranked_retrieve):
     print("\n\n*******************************\nFinished Running Longbench_E_Test.py\n\n")
 
 if __name__ == "__main__":
-    main(sys.argv[1], sys.argv[2], sys.argv[3])
+    main(sys.argv[1], sys.argv[2], sys.argv[3], sys.argv[4])
 
 ''' 
 References
