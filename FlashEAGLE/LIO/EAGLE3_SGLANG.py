@@ -1,10 +1,10 @@
 # Standard EAGLE-3 SGLANG
-# Hyperparameters: dataset, test_runs, max_new_tokens, temp
+# Hyperparameters: test_runs, max_new_tokens, temp
 
 import subprocess
 
 subprocess.run(
-    ["sudo", "apt-get", "install", "libnuma-dev"], check=True
+    ["sudo", "apt-get", "-y", "install", "libnuma-dev"], check=True
 )
 
 subprocess.run(
@@ -28,7 +28,7 @@ import openai
 import Data
 import hashlib
 
-def main(dataset="Spec-Bench"):
+def main():
     print("\n\n*******************************\nStarting EAGLE3_SGLANG.py\n\n")
 
     print("Python Version:")
@@ -40,14 +40,7 @@ def main(dataset="Spec-Bench"):
     base_model_paths = ["Qwen/Qwen3-8B"]
     EAGLE_model_paths = ["Tengyunw/qwen3_8b_eagle3"]
 
-    if dataset == "THUDM/LongBench":
-        prompts = Data.longbench_e()
-    elif dataset == "PKU-Alignment/Align-Anything-Instruction-100K-zh":
-        prompts = Data.aai_dataset()
-    elif dataset == "Spec-Bench":
-        prompts = Data.specbench()
-    else:
-        raise Exception
+    prompts = Data.specbench()
 
     # Preparing SGLANG with EAGLE3
     # Below Code Block From: https://docs.sglang.ai/advanced_features/speculative_decoding.html
@@ -65,11 +58,11 @@ def main(dataset="Spec-Bench"):
     eagle3_outputs = []
     # Hyperparameters
     test_runs = 3
-    max_new_tokens = 2048
+    max_new_tokens = 1024
     temp = 0.0
 
     print("\nEvaluation Settings Chosen:")
-    print("Dataset: ", dataset)
+    print("Dataset: Spec-Bench")
     print("Test Runs: ", test_runs)
     print("Max New Tokens: ", max_new_tokens)
     print("Temperature: ", temp)
@@ -87,12 +80,7 @@ def main(dataset="Spec-Bench"):
             print("Test Question: ", run)
             run += 1
 
-            if dataset == "THUDM/LongBench":
-                prompt = prompts[i][0] + "\n" + prompts[i][1]
-            elif dataset == "PKU-Alignment/Align-Anything-Instruction-100K-zh":
-                prompt = prompts[i]
-            elif dataset == "SpecBench":
-                prompt = prompts[i][0]
+            prompt = prompts[i][0]
             
             start = time.perf_counter_ns()
 
@@ -136,16 +124,16 @@ def main(dataset="Spec-Bench"):
     # Below Code Line From: https://docs.sglang.ai/advanced_features/speculative_decoding.html
     terminate_process(server_process)
 
-    output_name = f"EAGLE3_Output_{EAGLE_model_paths[0].replace('/', '-')}_{dataset.replace('/', '-')}.jsonl" 
+    output_name = f"EAGLE3_Output_{EAGLE_model_paths[0].replace('/', '-')}_Spec-Bench.jsonl" 
 
     # Below Code Block From: https://github.com/sgl-project/SpecForge/blob/main/scripts/prepare_data.py
     with open(output_name, "x") as f:
         for output in eagle3_outputs:
             f.write(json.dumps(output) + "\n")
 
-    print("Input Tokens: ", input_tokens)
-    print("Output Tokens: ", output_tokens)
-    print("Tokens Generated Per Second: ", token_rates)
+    print("Input Tokens Array: ", input_tokens)
+    print("Output Tokens Array: ", output_tokens)
+    print("Tokens Generated Per Second Array: ", token_rates)
 
     print("\n\nOutput Data: \n")
 

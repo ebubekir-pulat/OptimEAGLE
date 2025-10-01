@@ -1,10 +1,10 @@
 # LIO Testing
-# Hyperparameters: dataset, test_runs, max_new_tokens, temp
+# Hyperparameters: test_runs, max_new_tokens, temp
 
 import subprocess
 
 subprocess.run(
-    ["sudo", "apt-get", "install", "libnuma-dev"], check=True
+    ["sudo", "apt-get", "-y", "install", "libnuma-dev"], check=True
 )
 
 subprocess.run(
@@ -28,7 +28,7 @@ import openai
 import Data
 import hashlib
 
-def main(dataset="Spec-Bench"):
+def main():
     print("\n\n*******************************\nStarting LIO_Test.py\n\n")
 
     print("Python Version:")
@@ -41,16 +41,12 @@ def main(dataset="Spec-Bench"):
     base_model_paths = ["Qwen/Qwen3-8B"]
     EAGLE_model_paths = ["Tengyunw/qwen3_8b_eagle3"]
 
-    if dataset == "THUDM/LongBench":
-        prompts = Data.longbench_e()
-    elif dataset == "PKU-Alignment/Align-Anything-Instruction-100K-zh":
-        prompts = Data.aai_dataset()
-    elif dataset == "Spec-Bench":
-        prompts = Data.specbench()
+    
+    prompts = Data.specbench()
 
     LIO_prompt = f"Generate optimal hyperparameters for EAGLE-3 speculative decoding with SGLANG, where the \
                 base model to be used is {base_model_paths[0]}, the EAGLE-3 model to be used is {EAGLE_model_paths[0]} \
-                and the dataset to be tested on is {dataset}. Choose hyperparameters that optimise acceptance length, \
+                and the dataset to be tested on is Spec-Bench. Choose hyperparameters that optimise acceptance length, \
                 tokens generated per second and wall-time speedup. Provide as many hyperparameters as necessary for maximum \
                 performance. Generate the hyperparameters in the format: --hyperparameter_name1 value --hyperparameter_name2 value \
                 and so on. Before providing the hyperparameters, put a #START delimiter, and when finished, put a #END delimiter."
@@ -101,11 +97,11 @@ def main(dataset="Spec-Bench"):
     LIO_outputs = []
     # Hyperparameters
     test_runs = 3
-    max_new_tokens = 2048
+    max_new_tokens = 1024
     temp = 0.0
 
     print("\nEvaluation Settings Chosen:")
-    print("Dataset: ", dataset)
+    print("Dataset: Spec-Bench")
     print("Test Runs: ", test_runs)
     print("Max New Tokens: ", max_new_tokens)
     print("Temperature: ", temp, "\n")
@@ -122,13 +118,8 @@ def main(dataset="Spec-Bench"):
             print("Test Run: ", test_run)
             print("Test Question: ", run)
             run += 1
-
-            if dataset == "THUDM/LongBench":
-                prompt = prompts[i][0] + "\n" + prompts[i][1]
-            elif dataset == "PKU-Alignment/Align-Anything-Instruction-100K-zh":
-                prompt = prompts[i]
-            elif dataset == "Spec-Bench":
-                prompt = prompts[i][0]
+            
+            prompt = prompts[i][0]
             
             start = time.perf_counter_ns()
 
@@ -166,7 +157,7 @@ def main(dataset="Spec-Bench"):
 
     # Print LIO Results
     print(f"LIO Results for {LIO_model_paths[0]}:")
-    print(f"Dataset: {dataset}")
+    print(f"Dataset: Spec-Bench")
     print(f"EAGLE Model: {EAGLE_model_paths[0]}")
     print(f"Base Model: {base_model_paths[0]}")
     print("Mean Wall Time (ns): ", np.mean(wall_times))
