@@ -4,7 +4,7 @@
 import subprocess
 
 subprocess.run(
-    ["sudo", "apt-get", "install", "libnuma-dev"], check=True
+    ["sudo", "apt-get", "-y", "install", "libnuma-dev"], check=True
 )
 
 subprocess.run(
@@ -29,7 +29,7 @@ import Data
 import hashlib
 
 def main():
-    print("\n\n*******************************\nStarting LIO_SpecBench_Test.py\n\n")
+    print("\n\n*******************************\nStarting LIO_TaskSpecific_Test.py\n\n")
 
     print("Python Version:")
 
@@ -42,7 +42,11 @@ def main():
     EAGLE_model_paths = ["Tengyunw/qwen3_8b_eagle3"]
 
     prompts = Data.specbench()
+    print("Spec-Bench Dataset Shape: ", np.shape(prompts))
+
     tasks = Data.specbench_tasks()
+    print("Spec-Bench Tasks Shape: ", np.shape(tasks))
+
     tasks_set = {tasks}
     optim_params = {}
 
@@ -60,12 +64,13 @@ def main():
 
     for task in tasks_set:
         LIO_prompt = f"Generate optimal hyperparameters for EAGLE-3 speculative decoding with SGLANG, where the \
-                    base model to be used is {base_model_paths[0]}, the EAGLE-3 model to be used is {EAGLE_model_paths[0]}, \
-                    the dataset to be tested on is Spec-Bench and the specific task type is {task}. Choose hyperparameters that \
-                    optimise acceptance length, tokens generated per second and wall-time speedup. Provide as many hyperparameters \
-                    as necessary for maximum performance. Generate the hyperparameters in the format: \
-                    --hyperparameter_name1 value --hyperparameter_name2 value and so on. Before providing the hyperparameters, \
-                    put a #START delimiter, and when finished, put a #END delimiter."
+                    base model to be used is {base_model_paths[0]}, the EAGLE-3 model to be used is {EAGLE_model_paths[0]} and \
+                    the dataset to be tested on is Spec-Bench. Spec-Bench is a benchmark consisting of samples from the MT-bench, \
+                    WMT14 DE-EN, CNN/Daily Mail, Natural Questions, GSM8K and DPR datasets. The specific task type to optimise \
+                    for is {task}. Choose hyperparameters that optimise acceptance length, tokens generated per second and \
+                    wall-time speedup. Provide as many hyperparameters as necessary for maximum performance. Generate the \
+                    hyperparameters in the format: --hyperparameter_name1 value --hyperparameter_name2 value and so on. \
+                    Before providing the hyperparameters, put a #START delimiter, and when finished, put a #END delimiter."
 
         # Below Code Block From: https://docs.sglang.ai/advanced_features/speculative_decoding.html
         response = client.chat.completions.create(
@@ -107,7 +112,7 @@ def main():
     LIO_outputs = []
     # Hyperparameters
     test_runs = 3
-    max_new_tokens = 2048
+    max_new_tokens = 1024
     temp = 0.0
 
     print("\nEvaluation Settings Chosen:")
@@ -167,7 +172,7 @@ def main():
             LIO_outputs.append(output)
 
     # Print LIO Results
-    print(f"LIO Spec-Bench Results for {LIO_model_paths[0]}:")
+    print(f"LIO Results for {LIO_model_paths[0]}:")
     print(f"Dataset: Spec-Bench")
     print(f"EAGLE Model: {EAGLE_model_paths[0]}")
     print(f"Base Model: {base_model_paths[0]}")
@@ -180,23 +185,23 @@ def main():
         # Below Code Line From: https://docs.sglang.ai/advanced_features/speculative_decoding.html
         terminate_process(server_process)
 
-    output_name = f"LIO_SB_Output_{LIO_model_paths[0].replace('/', '-')}_{EAGLE_model_paths[0].replace('/', '-')}.jsonl" 
+    output_name = f"LIO_TaskSpecific_Output_{LIO_model_paths[0].replace('/', '-')}_{EAGLE_model_paths[0].replace('/', '-')}.jsonl" 
     
     # Below Code Block From: https://github.com/sgl-project/SpecForge/blob/main/scripts/prepare_data.py
     with open(output_name, "x") as f:
         for output in LIO_outputs:
             f.write(json.dumps(output) + "\n")
 
-    print("Input Tokens: ", input_tokens)
-    print("Output Tokens: ", output_tokens)
-    print("Tokens Generated Per Second: ", token_rates)
+    print("Input Tokens Array: ", input_tokens)
+    print("Output Tokens Array: ", output_tokens)
+    print("Tokens Generated Per Second Array: ", token_rates)
 
     print("\n\nOutput Data: \n")
 
     for output in LIO_outputs:
         print(output)
 
-    print("\n\n*******************************\nFinished Running LIO_SpecBench_Test.py\n\n")
+    print("\n\n*******************************\nFinished Running LIO_TaskSpecific_Test.py\n\n")
 
 if __name__ == "__main__":
     main()
