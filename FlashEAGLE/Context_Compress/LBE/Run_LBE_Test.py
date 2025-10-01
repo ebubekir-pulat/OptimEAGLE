@@ -4,10 +4,10 @@ from ray.job_submission import JobSubmissionClient
 
 client = JobSubmissionClient("FILL_IN")
 job_id = client.submit_job(
-    entrypoint="python Longbench_E_Test.py True False False",
+    entrypoint="python Longbench_E_Test.py True False False False",
     runtime_env={"working_dir": "./", "pip":["datasets==3.6.0", "nltk"]},
     entrypoint_num_gpus=1,
     entrypoint_num_cpus=12,
-    submission_id="OptimEAGLE-LBE-Test-Official-EAGLE3-NoSumm-NoRR-1"
+    submission_id="OptimEAGLE-LBE-Test-Official-EAGLE3-NoSumm-NoSR-NoSR-1"
 )
 print(job_id)
