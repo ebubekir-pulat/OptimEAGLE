@@ -49,8 +49,8 @@ def longbench_e():
         all_lb_prompts.sort(key=sort_func)
         counter = 0
 
-        for i in range(0, len(all_lb_prompts), 15):
-            if counter == 16:
+        for i in range(0, len(all_lb_prompts), 11):
+            if counter == 19:
                 break
 
             lb_prompts.append(all_lb_prompts[i])
