@@ -34,6 +34,21 @@ import sys
 def main(eagle3, summarise, ranked_retrieve):
     print("\n\n*******************************\nStarting Longbench_E_Test.py\n\n")
 
+    if eagle3 == "True":
+        eagle3 = True
+    else:
+        eagle3 = False
+
+    if summarise == "True":
+        summarise = True
+    else:
+        summarise = False
+
+    if ranked_retrieve == "True":
+        ranked_retrieve = True
+    else:
+        ranked_retrieve = False
+
     print("Python Version:")
 
     subprocess.run(
@@ -44,6 +59,7 @@ def main(eagle3, summarise, ranked_retrieve):
     EAGLE_model_paths = ["Tengyunw/qwen3_8b_eagle3"]
 
     lb_prompts = Data.longbench_e()
+    print("Dataset Shape: ", np.shape(lb_prompts))
 
     if eagle3 == True:
         # Preparing SGLANG with EAGLE3
@@ -71,7 +87,7 @@ def main(eagle3, summarise, ranked_retrieve):
     LB_outputs = []
     # Hyperparameters
     test_runs = 3
-    max_new_tokens = 2048
+    max_new_tokens = 1024
     temp = 0.0
 
     print("\nEvaluation Settings Chosen:")
@@ -162,6 +178,7 @@ def main(eagle3, summarise, ranked_retrieve):
         for output in LB_outputs:
             f.write(json.dumps(output) + "\n")
 
+    print("Mean Input Tokens: ", np.mean(input_tokens))
     print("Input Tokens: ", input_tokens)
     print("Output Tokens: ", output_tokens)
     print("Tokens Generated Per Second: ", token_rates)
@@ -174,7 +191,7 @@ def main(eagle3, summarise, ranked_retrieve):
     print("\n\n*******************************\nFinished Running Longbench_E_Test.py\n\n")
 
 if __name__ == "__main__":
-    main(bool(sys.argv[1]), bool(sys.argv[2]), bool(sys.argv[3]))
+    main(sys.argv[1], sys.argv[2], sys.argv[3])
 
 ''' 
 References
