@@ -1,4 +1,4 @@
-# Standard EAGLE-3 SGLANG
+# Standard EAGLE-3 SGLANG on Spec-Bench
 # Hyperparameters: test_runs, max_new_tokens, temp
 
 import subprocess
@@ -41,6 +41,7 @@ def main():
     EAGLE_model_paths = ["Tengyunw/qwen3_8b_eagle3"]
 
     prompts = Data.specbench()
+    print("Spec-Bench Dataset Shape: ", np.shape(prompts))
 
     # Preparing SGLANG with EAGLE3
     # Below Code Block From: https://docs.sglang.ai/advanced_features/speculative_decoding.html
@@ -124,7 +125,7 @@ def main():
     # Below Code Line From: https://docs.sglang.ai/advanced_features/speculative_decoding.html
     terminate_process(server_process)
 
-    output_name = f"EAGLE3_Output_{EAGLE_model_paths[0].replace('/', '-')}_Spec-Bench.jsonl" 
+    output_name = f"EAGLE3_SGLANG_Output_{EAGLE_model_paths[0].replace('/', '-')}_Spec-Bench.jsonl" 
 
     # Below Code Block From: https://github.com/sgl-project/SpecForge/blob/main/scripts/prepare_data.py
     with open(output_name, "x") as f:
