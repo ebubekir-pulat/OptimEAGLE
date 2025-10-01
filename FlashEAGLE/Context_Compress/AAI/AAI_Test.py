@@ -5,7 +5,7 @@
 import subprocess
 
 subprocess.run(
-    ["sudo", "apt-get", "install", "libnuma-dev"], check=True
+    ["sudo", "apt-get", "-y", "install", "libnuma-dev"], check=True
 )
 
 subprocess.run(
@@ -37,6 +37,16 @@ import sys
 
 def main(eagle3, translate):
     print("\n\n*******************************\nStarting AAI_Test.py\n\n")
+
+    if eagle3 == "True":
+        eagle3 = True
+    else:
+        eagle3 = False
+
+    if translate == "True":
+        translate = True
+    else:
+        translate = False
 
     print("Python Version:")
 
@@ -176,7 +186,7 @@ def main(eagle3, translate):
 
 
 if __name__ == "__main__":
-    main(bool(sys.argv[1]), bool(sys.argv[2]))
+    main(sys.argv[1], sys.argv[2])
 
 
 ''' 

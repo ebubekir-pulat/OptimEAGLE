@@ -41,7 +41,7 @@ def longbench_e():
         all_lb_prompts = []
 
         for i in range(len(data)):
-            if data[i]["language"] != "zh":
+            if data[i]["language"] == "en":
                 prompt = [data[i]["context"], data[i]["input"]]
                 all_lb_prompts.append(prompt)
         

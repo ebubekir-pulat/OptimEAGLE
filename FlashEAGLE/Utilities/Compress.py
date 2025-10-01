@@ -31,43 +31,38 @@ def summarise_text(text):
     # Below Code Line From: https://huggingface.co/pszemraj/long-t5-tglobal-base-16384-book-summary, https://huggingface.co/facebook/bart-large-cnn
     return summariser(text)[0]["summary_text"]
 
+
 nltk.download('punkt_tab')
 
-# Ranked Retrieval
-# Below code block from: https://huggingface.co/tomaarsen/Qwen3-Reranker-0.6B-seq-cls
-rr_tokenizer = AutoTokenizer.from_pretrained("tomaarsen/Qwen3-Reranker-0.6B-seq-cls", padding_side="left")
-rr_model = AutoModelForSequenceClassification.from_pretrained("tomaarsen/Qwen3-Reranker-0.6B-seq-cls", torch_dtype=torch.float16).eval()
-
-# Below code block from: https://huggingface.co/tomaarsen/Qwen3-Reranker-0.6B-seq-cls
-def format_instruction(instruction, query, doc):
-    prefix = '<|im_start|>system\nJudge whether the Document meets the requirements based on the Query and the Instruct provided. Note that the answer can only be "yes" or "no".<|im_end|>\n<|im_start|>user\n'
-    suffix = "<|im_end|>\n<|im_start|>assistant\n<think>\n\n</think>\n\n"
-    if instruction is None:
-        instruction = (
-            "Given a web search query, retrieve relevant passages that answer the query"
-        )
-    output = f"{prefix}<Instruct>: {instruction}\n<Query>: {query}\n<Document>: {doc}{suffix}"
-    return output
-
-# Code in below function from: https://huggingface.co/tomaarsen/Qwen3-Reranker-0.6B-seq-cls
-def ranked_retrieve(context, question):
-    max_length = 128 * 1024
-    task = "Given a web search query, retrieve relevant passages that answer the query"
+# Sentence Retrieval
+def sentence_retrieve(context):
     context_sentences = nltk.tokenize.sent_tokenize(context, language='english')
-    queries = [question for _ in range(len(context_sentences))]
+    return_context = ""
 
-    pairs = [format_instruction(task, query, doc) for query, doc in zip(queries, context_sentences)]
-    
-    inputs = rr_tokenizer(
-        pairs,
-        padding=True,
-        truncation=True,
-        max_length=max_length,
-        return_tensors="pt",
-    )
-    logits = rr_model(**inputs).logits.squeeze()
-    relevancies = logits.sigmoid()
-    relevancies = relevancies.tolist()
+    for i in range(len(context_sentences)):
+        if i % 2 != 0:
+            return_context += context_sentences[i] + " "
+
+    return_context = return_context[:len(return_context) - 1]
+    return return_context
+
+# Reference for below code block: https://huggingface.co/cross-encoder/ms-marco-MiniLM-L6-v2
+rr_model = AutoModelForSequenceClassification.from_pretrained('cross-encoder/ms-marco-MiniLM-L6-v2')
+rr_tokenizer = AutoTokenizer.from_pretrained('cross-encoder/ms-marco-MiniLM-L6-v2')
+rr_model.eval()
+
+def ranked_retrieve(context, input):
+    context_sentences = nltk.tokenize.sent_tokenize(context, language='english')
+    relevancies = []
+
+    for sentence in context_sentences:
+        # Reference for below code block: https://huggingface.co/cross-encoder/ms-marco-MiniLM-L6-v2
+        features = rr_tokenizer([input], [sentence],  padding=True, truncation=True, return_tensors="pt")    
+        with torch.no_grad():
+            scores = rr_model(**features).logits
+            print(scores)
+            relevancies.append(scores[0])
+
     mean_relevancy = np.mean(relevancies)
 
     return_context = ""
@@ -86,9 +81,7 @@ References
 1. Bird, Steven, Edward Loper and Ewan Klein (2009).
 Natural Language Processing with Python.  O'Reilly Media Inc.
 
-2. Q. Team, “Qwen3-embedding,” May 2025. [Online]. Available: https://qwenlm.github.io/blog/qwen3/
-
-3. T. Wolf, L. Debut, V. Sanh, J. Chaumond, C. Delangue, A. Moi, P. Cistac, T. Rault, R. Louf, M. Funtowicz,
+2. T. Wolf, L. Debut, V. Sanh, J. Chaumond, C. Delangue, A. Moi, P. Cistac, T. Rault, R. Louf, M. Funtowicz,
 J. Davison, S. Shleifer, P. von Platen, C. Ma, Y. Jernite, J. Plu, C. Xu, T. L. Scao, S. Gugger,
 M. Drame, Q. Lhoest, and A. M. Rush, “Transformers: State-of-the-art natural language processing,”
 in Proceedings of the 2020 Conference on Empirical Methods in Natural Language Processing: System
