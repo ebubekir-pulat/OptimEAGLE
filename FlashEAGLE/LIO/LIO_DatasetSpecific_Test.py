@@ -1,4 +1,4 @@
-# LIO Testing
+# LIO Dataset-Specific Testing
 # Hyperparameters: test_runs, max_new_tokens, temp
 
 import subprocess
@@ -29,7 +29,7 @@ import Data
 import hashlib
 
 def main():
-    print("\n\n*******************************\nStarting LIO_Test.py\n\n")
+    print("\n\n*******************************\nStarting LIO_DatasetSpecific_Test.py\n\n")
 
     print("Python Version:")
 
@@ -40,16 +40,19 @@ def main():
     LIO_model_paths = ["openai/gpt-oss-20b"]
     base_model_paths = ["Qwen/Qwen3-8B"]
     EAGLE_model_paths = ["Tengyunw/qwen3_8b_eagle3"]
-
     
     prompts = Data.specbench()
+    print("Spec-Bench Dataset Shape: ", np.shape(prompts))
 
     LIO_prompt = f"Generate optimal hyperparameters for EAGLE-3 speculative decoding with SGLANG, where the \
                 base model to be used is {base_model_paths[0]}, the EAGLE-3 model to be used is {EAGLE_model_paths[0]} \
-                and the dataset to be tested on is Spec-Bench. Choose hyperparameters that optimise acceptance length, \
-                tokens generated per second and wall-time speedup. Provide as many hyperparameters as necessary for maximum \
-                performance. Generate the hyperparameters in the format: --hyperparameter_name1 value --hyperparameter_name2 value \
-                and so on. Before providing the hyperparameters, put a #START delimiter, and when finished, put a #END delimiter."
+                and the dataset to be tested on is Spec-Bench. Spec-Bench is a benchmark covering multi-turn conversation, \
+                translation, summarisation, question answering, mathematical reasoning and retrieval-augmented generation, \
+                consisting of samples from the MT-bench, WMT14 DE-EN, CNN/Daily Mail, Natural Questions, GSM8K and DPR \
+                datasets. Choose hyperparameters that optimise acceptance length, tokens generated per second and wall-time speedup. \
+                Provide as many hyperparameters as necessary for maximum performance. Generate the hyperparameters in \
+                the format: --hyperparameter_name1 value --hyperparameter_name2 value and so on. \
+                Before providing the hyperparameters, put a #START delimiter, and when finished, put a #END delimiter."
 
     # Preparing LIO SGLANG
     # Below Code Block From: https://docs.sglang.ai/advanced_features/speculative_decoding.html, https://docs.sglang.ai/basic_usage/send_request.html
@@ -166,23 +169,23 @@ def main():
     # Below Code Line From: https://docs.sglang.ai/advanced_features/speculative_decoding.html
     terminate_process(server_process)
 
-    output_name = f"LIO_Output_{LIO_model_paths[0].replace('/', '-')}_{EAGLE_model_paths[0].replace('/', '-')}.jsonl" 
+    output_name = f"LIO_DatasetSpecific_Output_{LIO_model_paths[0].replace('/', '-')}_{EAGLE_model_paths[0].replace('/', '-')}.jsonl" 
     
     # Below Code Block From: https://github.com/sgl-project/SpecForge/blob/main/scripts/prepare_data.py
     with open(output_name, "x") as f:
         for output in LIO_outputs:
             f.write(json.dumps(output) + "\n")
 
-    print("Input Tokens: ", input_tokens)
-    print("Output Tokens: ", output_tokens)
-    print("Tokens Generated Per Second: ", token_rates)
+    print("Input Tokens Array: ", input_tokens)
+    print("Output Tokens Array: ", output_tokens)
+    print("Tokens Generated Per Second Array: ", token_rates)
 
     print("\n\nOutput Data: \n")
 
     for output in LIO_outputs:
         print(output)
 
-    print("\n\n*******************************\nFinished Running LIO_Test.py\n\n")
+    print("\n\n*******************************\nFinished Running LIO_DatasetSpecific_Test.py\n\n")
 
 if __name__ == "__main__":
     main()
