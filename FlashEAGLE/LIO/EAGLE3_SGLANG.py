@@ -4,6 +4,10 @@
 import subprocess
 
 subprocess.run(
+    ["sudo", "apt-get", "install", "libnuma-dev"], check=True
+)
+
+subprocess.run(
     ["pip", "install", "uv"], check=True
 )
 
@@ -23,10 +27,15 @@ from sglang.utils import wait_for_server, terminate_process
 import openai
 import Data
 import hashlib
-import sys
 
-def main(dataset):
+def main(dataset="Spec-Bench"):
     print("\n\n*******************************\nStarting EAGLE3_SGLANG.py\n\n")
+
+    print("Python Version:")
+
+    subprocess.run(
+        ["python", "--version"], check=True
+    )
 
     base_model_paths = ["Qwen/Qwen3-8B"]
     EAGLE_model_paths = ["Tengyunw/qwen3_8b_eagle3"]
@@ -35,7 +44,7 @@ def main(dataset):
         prompts = Data.longbench_e()
     elif dataset == "PKU-Alignment/Align-Anything-Instruction-100K-zh":
         prompts = Data.aai_dataset()
-    elif dataset == "SpecBench":
+    elif dataset == "Spec-Bench":
         prompts = Data.specbench()
     else:
         raise Exception
@@ -138,10 +147,15 @@ def main(dataset):
     print("Output Tokens: ", output_tokens)
     print("Tokens Generated Per Second: ", token_rates)
 
+    print("\n\nOutput Data: \n")
+
+    for output in eagle3_outputs:
+        print(output)
+
     print("\n\n*******************************\nFinished Running EAGLE3_SGLANG.py\n\n")
 
 if __name__ == "__main__":
-    main(sys.argv[1])
+    main()
 
 ''' 
 References
