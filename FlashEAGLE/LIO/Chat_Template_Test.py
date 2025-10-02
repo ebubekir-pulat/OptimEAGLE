@@ -4,7 +4,7 @@
 import subprocess
 
 subprocess.run(
-    ["sudo", "apt-get", "install", "libnuma-dev"], check=True
+    ["sudo", "apt-get", "-y", "install", "libnuma-dev"], check=True
 )
 
 subprocess.run(
@@ -13,10 +13,6 @@ subprocess.run(
 
 subprocess.run(
     ["uv", "pip", "install", "sglang[all]>=0.5.3rc0"], check=True
-)
-
-subprocess.run(
-    ["pip", "install", "numpy==1.26.4"], check=True
 )
 
 subprocess.run(
@@ -46,21 +42,35 @@ def main():
     EAGLE_model_paths = ["Tengyunw/qwen3_8b_eagle3"]
 
     prompts = Data.specbench()
-    dataset = "Spec-Bench"
+    print("Shape of Spec-Bench Dataset: ", np.shape(prompts))
 
-    # Reference for below prompt: https://docs.sglang.ai/references/custom_chat_template.html
-    LIO_prompt = f'Generate a chat template for EAGLE-3 speculative decoding with SGLANG, where the \
-                base model to be used is {base_model_paths[0]}, the EAGLE-3 model to be used is {EAGLE_model_paths[0]} \
-                and the dataset to be tested on is {dataset}. Generate a chat temmplate file to feed into SGLANG\'s --chat-template parameter. \
-                The chat template should have the following format: \
-                {{"name": "my_model", \
-                "system": "<|im_start|>system", \
-                "user": ""<|im_start|>user"", \
-                "assistant": "<|im_start|>assistant", \
-                "sep_style": "CHATML", \
-                "sep": "<|im_end|>", \
-                "stop_str": ["<|im_end|>", "<|im_start|>"] \
-                "}}'
+    structured = True
+
+    if structured:
+        # Reference for below prompt: https://docs.sglang.ai/references/custom_chat_template.html
+        LIO_prompt = f'Generate a chat template for EAGLE-3 speculative decoding with SGLANG, where the \
+                    base model to be used is {base_model_paths[0]}, the EAGLE-3 model to be used is {EAGLE_model_paths[0]} \
+                    and the dataset to be tested on is Spec-Bench. Spec-Bench is a benchmark covering multi-turn conversation, \
+                    translation, summarisation, question answering, mathematical reasoning and retrieval-augmented generation, \
+                    consisting of samples from the MT-bench, WMT14 DE-EN, CNN/Daily Mail, Natural Questions, GSM8K and DPR \
+                    datasets. Generate a chat template file to feed into SGLANG\'s --chat-template parameter. \
+                    The chat template should have the following format: \
+                    {{"name": "my_model", \
+                    "system": "<|im_start|>system", \
+                    "user": ""<|im_start|>user"", \
+                    "assistant": "<|im_start|>assistant", \
+                    "sep_style": "CHATML", \
+                    "sep": "<|im_end|>", \
+                    "stop_str": ["<|im_end|>", "<|im_start|>"] \
+                    "}} \nBefore providing the chat template, put a #START delimiter, and when finished, put a #END delimiter.'
+    else:
+        LIO_prompt = f'Generate a chat template for EAGLE-3 speculative decoding with SGLANG, where the \
+                    base model to be used is {base_model_paths[0]}, the EAGLE-3 model to be used is {EAGLE_model_paths[0]} \
+                    and the dataset to be tested on is Spec-Bench. Spec-Bench is a benchmark covering multi-turn conversation, \
+                    translation, summarisation, question answering, mathematical reasoning and retrieval-augmented generation, \
+                    consisting of samples from the MT-bench, WMT14 DE-EN, CNN/Daily Mail, Natural Questions, GSM8K and DPR \
+                    datasets. Generate a chat template file to feed into SGLANG\'s --chat-template parameter. \
+                    Before providing the chat template, put a #START delimiter, and when finished, put a #END delimiter.'
 
     # Preparing LIO SGLANG
     # Below Code Block From: https://docs.sglang.ai/advanced_features/speculative_decoding.html, https://docs.sglang.ai/basic_usage/send_request.html
@@ -74,7 +84,6 @@ def main():
     wait_for_server(f"http://localhost:{port}")
     client = openai.Client(base_url=f"http://127.0.0.1:{port}/v1", api_key="None")
 
-
     # Below Code Block From: https://docs.sglang.ai/advanced_features/speculative_decoding.html
     response = client.chat.completions.create(
         model=LIO_model_paths[0],
@@ -87,6 +96,7 @@ def main():
 
     # Reference for below code line: https://stackoverflow.com/questions/77444332/openai-python-package-error-chatcompletion-object-is-not-subscriptable 
     LIO_output = response.choices[0].message.content
+    LIO_output = Data.extract_LIO_response(LIO_output)
 
     # Reference for below code block: https://www.w3schools.com/python/python_file_write.asp
     with open("ChatTemplate.json", "x") as f:
@@ -111,7 +121,7 @@ def main():
     LIO_outputs = []
     # Hyperparameters
     test_runs = 3
-    max_new_tokens = 2048
+    max_new_tokens = 1024
     temp = 0.0
 
     print("\nEvaluation Settings Chosen:")
@@ -170,7 +180,7 @@ def main():
 
     # Print LIO Results
     print(f"ChatTemplate Results for {LIO_model_paths[0]}:")
-    print(f"Dataset: {dataset}")
+    print(f"Dataset: Spec-Bench")
     print(f"EAGLE Model: {EAGLE_model_paths[0]}")
     print(f"Base Model: {base_model_paths[0]}")
     print("Mean Wall Time (ns): ", np.mean(wall_times))
@@ -186,6 +196,7 @@ def main():
         for output in LIO_outputs:
             f.write(json.dumps(output) + "\n")
 
+    print("Walltimes Array: ", wall_times)
     print("Input Tokens Array: ", input_tokens)
     print("Output Tokens Array: ", output_tokens)
     print("Tokens Generated Per Second Array: ", token_rates)
@@ -201,9 +212,27 @@ if __name__ == "__main__":
     main()
 
 ''' 
-
 References
 
-1.
+1. Y. Li, F. Wei, C. Zhang, and H. Zhang, “EAGLE: Speculative sampling requires rethinking feature
+uncertainty,” in Proceedings of the 41st International Conference on Machine Learning, ser. Proceedings
+of Machine Learning Research, R. Salakhutdinov, Z. Kolter, K. Heller, A. Weller, N. Oliver, J. Scarlett,
+and F. Berkenkamp, Eds., vol. 235. PMLR, 21–27 Jul 2024, pp. 28 935–28 948. [Online]. Available:
+https://proceedings.mlr.press/v235/li24bt.html
+
+2. Y. Li, F. Wei, C. Zhang, and H. Zhang, “EAGLE-2: Faster inference of language models with dynamic
+draft trees,” in Proceedings of the 2024 Conference on Empirical Methods in Natural Language Processing,
+Y. Al-Onaizan, M. Bansal, and Y.-N. Chen, Eds. Miami, Florida, USA: Association for Computational
+Linguistics, Nov. 2024, pp. 7421–7432. [Online]. Available: https://aclanthology.org/2024.emnlp-main.422/
+
+3. Y. Li, F. Wei, C. Zhang, and H. Zhang, “Eagle-3: Scaling up inference acceleration of large language models
+via training-time test,” 2025. [Online]. Available: https://arxiv.org/abs/2503.01840
+
+4. C. W. F. Y. S. S. Y. W. Y. Z. Y. H. H. Z. Y. Z. Shenggui Li, Yikai Zhu, “Specforge: Train speculative decoding
+models effortlessly,” https://github.com/sgl-project/specforge, 2025.
+
+5. OpenAI, “gpt-oss-120b gpt-oss-20b model card,” 2025. [Online]. Available: https://arxiv.org/abs/2508.10925
+
+6. Q. Team, “Qwen3 technical report,” 2025. [Online]. Available: https://arxiv.org/abs/2505.09388
 
 '''

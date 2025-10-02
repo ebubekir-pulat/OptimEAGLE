@@ -132,6 +132,7 @@ def main():
         for output in eagle3_outputs:
             f.write(json.dumps(output) + "\n")
 
+    print("Walltimes Array: ", wall_times)
     print("Input Tokens Array: ", input_tokens)
     print("Output Tokens Array: ", output_tokens)
     print("Tokens Generated Per Second Array: ", token_rates)
