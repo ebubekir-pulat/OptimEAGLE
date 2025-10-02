@@ -60,8 +60,7 @@ def ranked_retrieve(context, input):
         features = rr_tokenizer([input], [sentence],  padding=True, truncation=True, return_tensors="pt")    
         with torch.no_grad():
             score = rr_model(**features).logits
-            print(score)
-            relevancies.append(score[0])
+            relevancies.append(score[0].item())
 
     mean_relevancy = np.mean(relevancies)
     return_context = ""

@@ -17,10 +17,6 @@ subprocess.run(
 )
 
 subprocess.run(
-    ["pip", "install", "numpy==1.26.4"], check=True
-)
-
-subprocess.run(
     ["nvidia-smi"], check=True
 )
 
@@ -58,6 +54,7 @@ def main(eagle3, translate):
     EAGLE_model_paths = ["Tengyunw/qwen3_8b_eagle3"]
 
     aai_ds = Data.aai_dataset()
+    print("AAI Dataset Shape: ", np.shape(aai_ds))
 
     if eagle3 == True:
         # Preparing SGLANG with EAGLE3
