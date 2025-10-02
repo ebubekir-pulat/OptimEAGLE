@@ -173,6 +173,7 @@ def main(eagle3, translate):
     print("Input Tokens Array: ", input_tokens)
     print("Output Tokens Array: ", output_tokens)
     print("Tokens Generated Per Second Array: ", token_rates)
+    print("Walltimes Array: ", wall_times)
 
     print("\n\nOutput Data: \n")
 
