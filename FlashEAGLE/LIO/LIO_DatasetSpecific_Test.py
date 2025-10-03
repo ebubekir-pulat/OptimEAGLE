@@ -83,6 +83,7 @@ def main():
     terminate_process(server_process)
 
     LIO_output = Data.extract_LIO_response(LIO_output)
+    print("LIO Output: ", LIO_output)
 
     # Preparing SGLANG with EAGLE3
     # Below Code Block From: https://docs.sglang.ai/advanced_features/speculative_decoding.html

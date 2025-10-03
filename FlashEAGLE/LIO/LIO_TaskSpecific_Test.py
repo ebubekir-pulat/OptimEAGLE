@@ -85,6 +85,7 @@ def main():
         # Reference for below code line: https://stackoverflow.com/questions/77444332/openai-python-package-error-chatcompletion-object-is-not-subscriptable 
         LIO_output = response.choices[0].message.content
         LIO_output = Data.extract_LIO_response(LIO_output)
+        print("LIO Output: ", LIO_output)
         optim_params[task] = LIO_output
 
     # Below Code Line From: https://docs.sglang.ai/advanced_features/speculative_decoding.html
