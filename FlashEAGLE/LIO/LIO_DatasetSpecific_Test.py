@@ -54,7 +54,7 @@ def main():
                 translation, summarisation, question answering, mathematical reasoning and retrieval-augmented generation, \
                 consisting of samples from the MT-bench, WMT14 DE-EN, CNN/Daily Mail, Natural Questions, GSM8K and DPR \
                 datasets. Choose hyperparameters that optimise acceptance length, tokens generated per second and wall-time speedup. \
-                Provide values for these parameters, or ignore them if intend to keep default: --kv-cache-dtype ('auto', 'fp8_e5m2', 'fp8_e4m3'), \
+                Provide values for these parameters, or ignore them if you intend to keep the default value: --kv-cache-dtype ('auto', 'fp8_e5m2', 'fp8_e4m3'), \
                 --stream-interval, --max-prefill-tokens, --chunked-prefill-size, --speculative-num-steps, \
                 --disable-outlines-disk-cache (To Select Option, Simply Write Parameter), --enable-tokenizer-batch-encode (To Select Option, Simply Write Parameter), \
                 --speculative-eagle-topk, --speculative-num-draft-tokens, --speculative-attention-mode (prefill or decode), \
@@ -93,6 +93,8 @@ def main():
                 those are the only available values to choose from. Before providing the hyperparameters, \
                 put a #START delimiter, and when finished, put a #END delimiter. THIS IS IMPORTANT. Note, if choosing to keep the default value for a parameter, \
                 DO NOT LIST THE PARAMETER IN BETWEEN THE DELIMITERS. Make sure to follow the format, and ensure your total output is within 8192 tokens MAXIMUM!"
+
+    print("LIO Prompt: ", LIO_prompt, "\n\n")
 
     # Preparing LIO SGLANG
     # Below Code Block From: https://docs.sglang.ai/advanced_features/speculative_decoding.html, https://docs.sglang.ai/basic_usage/send_request.html

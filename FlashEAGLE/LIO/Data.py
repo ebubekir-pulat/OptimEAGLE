@@ -10,7 +10,7 @@ def specbench():
     return sb_prompts
 
 def specbench_tasks():
-    # Getting Spec-Bench Data from: https://github.com/hemingkx/Spec-Bench/blob/main/data/spec_bench/question.jsonl 
+    # Get Spec-Bench Data from: https://github.com/hemingkx/Spec-Bench/blob/main/data/spec_bench/question.jsonl 
     # Below line from: https://stackoverflow.com/questions/50475635/loading-jsonl-file-as-json-objects
     jsonObj = pd.read_json(path_or_buf='question.jsonl', lines=True)
     sb_tasks = [jsonObj.at[i, 'category'] for i in range(len(jsonObj))]
