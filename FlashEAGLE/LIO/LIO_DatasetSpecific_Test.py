@@ -94,7 +94,7 @@ def main():
                 put a #START delimiter, and when finished, put a #END delimiter. THIS IS IMPORTANT. Note, if choosing to keep the default value for a parameter, \
                 DO NOT LIST THE PARAMETER IN BETWEEN THE DELIMITERS. Make sure to follow the format, and ensure your total output is within 8192 tokens MAXIMUM!"
 
-    print("LIO Prompt: ", LIO_prompt, "\n\n")
+    print("LIO Prompt: ", LIO_prompt, "\n\n END OF LIO PROMPT")
 
     # Preparing LIO SGLANG
     # Below Code Block From: https://docs.sglang.ai/advanced_features/speculative_decoding.html, https://docs.sglang.ai/basic_usage/send_request.html
@@ -125,7 +125,7 @@ def main():
     terminate_process(server_process)
 
     LIO_output = Data.extract_LIO_response(LIO_output)
-    print("LIO Output: ", LIO_output)
+    print("LIO Output: ", LIO_output, "\n\nEND OF LIO OUTPUT")
 
     # Preparing SGLANG with EAGLE3
     # Below Code Block From: https://docs.sglang.ai/advanced_features/speculative_decoding.html

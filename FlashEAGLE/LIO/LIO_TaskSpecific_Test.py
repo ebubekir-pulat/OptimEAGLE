@@ -51,12 +51,12 @@ def main():
     tasks = Data.specbench_tasks()
     print("Spec-Bench Tasks Shape: ", np.shape(tasks))
 
-    tasks_set = {}
+    tasks_set = set()
     for task in tasks:
         tasks_set.add(task)
     optim_params = {}
 
-    print("Tasks Set: ", tasks_set)
+    print("\n\nTasks Set: ", tasks_set)
 
     # Preparing LIO SGLANG
     # Below Code Block From: https://docs.sglang.ai/advanced_features/speculative_decoding.html, https://docs.sglang.ai/basic_usage/send_request.html
@@ -118,7 +118,7 @@ def main():
                 DO NOT LIST THE PARAMETER IN BETWEEN THE DELIMITERS. Make sure to follow the format, and ensure your total output is within 8192 tokens MAXIMUM! \
                 REMEMBER TO OPTIMISE FOR THE {task} TASK TYPE SPECIFICALLY!"
         
-        print("Task: ", task, " LIO Prompt: ", LIO_prompt, "\n\n")
+        print("Task: ", task, " LIO Prompt: ", LIO_prompt, "\n\nEND OF LIO PROMPT")
 
         # Below Code Block From: https://docs.sglang.ai/advanced_features/speculative_decoding.html
         response = client.chat.completions.create(
@@ -133,7 +133,7 @@ def main():
         # Reference for below code line: https://stackoverflow.com/questions/77444332/openai-python-package-error-chatcompletion-object-is-not-subscriptable 
         LIO_output = response.choices[0].message.content
         LIO_output = Data.extract_LIO_response(LIO_output)
-        print("Task: ", task, " LIO Output: ", LIO_output, "\n\n")
+        print("Task: ", task, " LIO Output: ", LIO_output, "\n\nEND OF LIO OUTPUT")
         optim_params[task] = LIO_output
 
     # Below Code Line From: https://docs.sglang.ai/advanced_features/speculative_decoding.html
