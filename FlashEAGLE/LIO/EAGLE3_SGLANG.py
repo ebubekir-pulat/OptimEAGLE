@@ -118,7 +118,8 @@ def main():
             eagle3_outputs.append(output)
 
     # Print EAGLE-3 Results
-    print(f"EAGLE-3 for {EAGLE_model_paths[0]}:")
+    print(f"EAGLE-3 Results For {EAGLE_model_paths[0]}:")
+    print("Base Model: ", base_model_paths[0])
     print("Mean Wall Time (ns): ", np.mean(wall_times))
     print("Mean Tokens Generated/s: ", np.mean(token_rates))
 
