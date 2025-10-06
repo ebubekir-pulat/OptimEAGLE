@@ -77,7 +77,7 @@ def main():
                     translation, summarisation, question answering, mathematical reasoning and retrieval-augmented generation, \
                     consisting of samples from the MT-bench, WMT14 DE-EN, CNN/Daily Mail, Natural Questions, GSM8K and DPR \
                     datasets. The specific task type to optimise for is {task}. Choose hyperparameters that optimise acceptance length, tokens generated per second and \
-                    wall-time speedup. Provide values for these parameters, or ignore them if intend to keep default: --kv-cache-dtype ('auto', 'fp8_e5m2', 'fp8_e4m3'), \
+                    wall-time speedup. Provide values for these parameters, or ignore them if you intend to keep the default value: --kv-cache-dtype ('auto', 'fp8_e5m2', 'fp8_e4m3'), \
                     --stream-interval, --max-prefill-tokens, --chunked-prefill-size, --speculative-num-steps, \
                 --disable-outlines-disk-cache (To Select Option, Simply Write Parameter), --enable-tokenizer-batch-encode (To Select Option, Simply Write Parameter), \
                 --speculative-eagle-topk, --speculative-num-draft-tokens, --speculative-attention-mode (prefill or decode), \
@@ -117,6 +117,8 @@ def main():
                 put a #START delimiter, and when finished, put a #END delimiter. THIS IS IMPORTANT. Note, if choosing to keep the default value for a parameter, \
                 DO NOT LIST THE PARAMETER IN BETWEEN THE DELIMITERS. Make sure to follow the format, and ensure your total output is within 8192 tokens MAXIMUM! \
                 REMEMBER TO OPTIMISE FOR THE {task} TASK TYPE SPECIFICALLY!"
+        
+        print("Task: ", task, " LIO Prompt: ", LIO_prompt, "\n\n")
 
         # Below Code Block From: https://docs.sglang.ai/advanced_features/speculative_decoding.html
         response = client.chat.completions.create(
@@ -131,7 +133,7 @@ def main():
         # Reference for below code line: https://stackoverflow.com/questions/77444332/openai-python-package-error-chatcompletion-object-is-not-subscriptable 
         LIO_output = response.choices[0].message.content
         LIO_output = Data.extract_LIO_response(LIO_output)
-        print("LIO Output: ", LIO_output)
+        print("Task: ", task, " LIO Output: ", LIO_output, "\n\n")
         optim_params[task] = LIO_output
 
     # Below Code Line From: https://docs.sglang.ai/advanced_features/speculative_decoding.html
@@ -154,7 +156,6 @@ def main():
         client = openai.Client(base_url=f"http://127.0.0.1:{port}/v1", api_key="None")
 
         servers[task] = [server_process, port, client]
-
 
     LIO_outputs = []
     # Hyperparameters
