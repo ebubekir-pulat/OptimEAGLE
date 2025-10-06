@@ -16,6 +16,10 @@ subprocess.run(
 )
 
 subprocess.run(
+    ["pip", "install", "numpy==1.26.4"], check=True
+)
+
+subprocess.run(
     ["nvidia-smi"], check=True
 )
 
