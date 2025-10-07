@@ -59,7 +59,6 @@ def main():
                 --disable-outlines-disk-cache (To Select Option, Simply Write Parameter), --enable-tokenizer-batch-encode (To Select Option, Simply Write Parameter), \
                 --speculative-eagle-topk, --speculative-num-draft-tokens, --speculative-attention-mode (prefill or decode), \
                 --disable-radix-cache (To Select Option, Simply Write Parameter), --cuda-graph-max-bs, \
-                --enable-mixed-chunk (To Select Option, Simply Write Parameter), \
                 --enable-dp-lm-head (To Select Option, Simply Write Parameter), --enable-two-batch-overlap (To Select Option, Simply Write Parameter), \
                 --tbo-token-distribution-threshold, --enable-torch-compile (To Select Option, Simply Write Parameter), --torch-compile-max-bs, \
                 --triton-attention-reduce-in-fp32 (To Select Option, Simply Write Parameter), --triton-attention-num-kv-splits, --num-continuous-decode-steps, \
