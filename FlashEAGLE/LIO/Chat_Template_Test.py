@@ -56,7 +56,7 @@ def main():
                 consisting of samples from the MT-bench, WMT14 DE-EN, CNN/Daily Mail, Natural Questions, GSM8K and DPR \
                 datasets. Generate a chat template file to feed into SGLANG\'s --chat-template parameter. \
                 This is an example chat template below, but be creative and make big changes for maximum performance gains \
-                to optimise average accpentance length, tokens generated per second and walltime speedup: \
+                to optimise accpentance length, tokens generated per second and wall-time speedup: \
                 {{"name": "my_model", \
                 "system": "<|im_start|>system", \
                 "user": ""<|im_start|>user"", \
@@ -92,7 +92,7 @@ def main():
     LIO_output = response.choices[0].message.content
     LIO_output = Data.extract_LIO_response(LIO_output)
 
-    print("LIO - Suggested Chat Template:\n", LIO_output)
+    print("LIO - Suggested Chat Template:\n", LIO_output, "\nEND OF CHAT TEMPLATE")
 
     # Reference for below code block: https://www.w3schools.com/python/python_file_write.asp
     with open("ChatTemplate.json", "x") as f:
@@ -177,7 +177,7 @@ def main():
     # Print LIO Results
     print(f"ChatTemplate Results for {LIO_model_paths[0]}:")
     print(f"Dataset: Spec-Bench")
-    print(f"EAGLE Model: {EAGLE_model_paths[0]}")
+    print(f"EAGLE-3 Model: {EAGLE_model_paths[0]}")
     print(f"Base Model: {base_model_paths[0]}")
     print("Mean Wall Time (ns): ", np.mean(wall_times))
     print("Mean Tokens Generated/s: ", np.mean(token_rates))
