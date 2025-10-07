@@ -1,5 +1,6 @@
 # KV Cache Experimentation
 # Hyperparameters are "test_runs", "max_new_tokens", "temp"
+# test_id defines KV Cache Test ID
 
 import time
 import numpy as np
@@ -18,6 +19,7 @@ def main(test_id):
     EAGLE_model_paths = ["yuhuili/EAGLE3-DeepSeek-R1-Distill-LLaMA-8B"]
 
     prompts = Data.specbench()
+    print("Spec-Bench Shape: ", np.shape(prompts))
 
     # Below Code Block From: https://github.com/SafeAILab/EAGLE
     model = EaModel.from_pretrained(
