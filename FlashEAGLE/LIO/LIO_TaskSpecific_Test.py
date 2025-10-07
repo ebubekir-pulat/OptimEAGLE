@@ -110,7 +110,7 @@ def main():
                 DO NOT LIST THE PARAMETER IN BETWEEN THE DELIMITERS. Make sure to follow the format, and ensure your total output is within 8192 tokens MAXIMUM! \
                 REMEMBER TO OPTIMISE FOR THE {task} TASK TYPE SPECIFICALLY!"
         
-        print("Task: ", task, " LIO Prompt: ", LIO_prompt, "\n\nEND OF LIO PROMPT")
+        print("Task: ", task, " LIO Prompt: ", LIO_prompt, "\nEND OF LIO PROMPT")
 
         # Below Code Block From: https://docs.sglang.ai/advanced_features/speculative_decoding.html
         response = client.chat.completions.create(
@@ -125,29 +125,11 @@ def main():
         # Reference for below code line: https://stackoverflow.com/questions/77444332/openai-python-package-error-chatcompletion-object-is-not-subscriptable 
         LIO_output = response.choices[0].message.content
         LIO_output = Data.extract_LIO_response(LIO_output)
-        print("Task: ", task, " LIO Output: ", LIO_output, "\n\nEND OF LIO OUTPUT")
+        print("Task: ", task, " LIO Output: ", LIO_output, "\nEND OF LIO OUTPUT")
         optim_params[task] = LIO_output
 
     # Below Code Line From: https://docs.sglang.ai/advanced_features/speculative_decoding.html
     terminate_process(server_process)
-
-    servers = {}
-
-    for task in optim_params:
-        # Preparing SGLANG with EAGLE3
-        # Below Code Block From: https://docs.sglang.ai/advanced_features/speculative_decoding.html
-        server_process, port = launch_server_cmd(
-            f"""
-        python3 -m sglang.launch_server --model {base_model_paths[0]}  --speculative-algorithm EAGLE3 \
-            --speculative-draft-model-path {EAGLE_model_paths[0]} {optim_params[task]}
-        """
-        )
-
-        # Below Code Block From: https://docs.sglang.ai/advanced_features/speculative_decoding.html
-        wait_for_server(f"http://localhost:{port}")
-        client = openai.Client(base_url=f"http://127.0.0.1:{port}/v1", api_key="None")
-
-        servers[task] = [server_process, port, client]
 
     LIO_outputs = []
     # Hyperparameters
@@ -167,6 +149,21 @@ def main():
     input_tokens = []
     output_tokens = []
 
+    prev_task = tasks[0]
+
+    # Preparing SGLANG with EAGLE3
+    # Below Code Block From: https://docs.sglang.ai/advanced_features/speculative_decoding.html
+    server_process, port = launch_server_cmd(
+        f"""
+    python3 -m sglang.launch_server --model {base_model_paths[0]}  --speculative-algorithm EAGLE3 \
+        --speculative-draft-model-path {EAGLE_model_paths[0]} {optim_params[tasks[0]]}
+    """
+    )
+
+    # Below Code Block From: https://docs.sglang.ai/advanced_features/speculative_decoding.html
+    wait_for_server(f"http://localhost:{port}")
+    client = openai.Client(base_url=f"http://127.0.0.1:{port}/v1", api_key="None")
+
     for test_run in range(test_runs):
         run = 1
         for i in range(len(prompts)):
@@ -176,7 +173,25 @@ def main():
 
             prompt = prompts[i][0]
             
-            server_process, port, client = servers[tasks[i]]
+            curr_task = tasks[i]
+
+            if curr_task != prev_task:
+                # Below Code Line From: https://docs.sglang.ai/advanced_features/speculative_decoding.html
+                terminate_process(server_process)
+
+                # Preparing SGLANG with EAGLE3
+                # Below Code Block From: https://docs.sglang.ai/advanced_features/speculative_decoding.html
+                server_process, port = launch_server_cmd(
+                    f"""
+                python3 -m sglang.launch_server --model {base_model_paths[0]}  --speculative-algorithm EAGLE3 \
+                    --speculative-draft-model-path {EAGLE_model_paths[0]} {optim_params[curr_task]}
+                """
+                )
+
+                # Below Code Block From: https://docs.sglang.ai/advanced_features/speculative_decoding.html
+                wait_for_server(f"http://localhost:{port}")
+                client = openai.Client(base_url=f"http://127.0.0.1:{port}/v1", api_key="None")
+
             start = time.perf_counter_ns()
 
             # Below Code Block From: https://docs.sglang.ai/advanced_features/speculative_decoding.html
@@ -190,6 +205,8 @@ def main():
             )
 
             finish = time.perf_counter_ns()
+
+            prev_task = curr_task
 
             # Reference for below code line: https://stackoverflow.com/questions/77444332/openai-python-package-error-chatcompletion-object-is-not-subscriptable 
             model_output = response.choices[0].message.content
@@ -211,6 +228,9 @@ def main():
             }
             LIO_outputs.append(output)
 
+    # Below Code Line From: https://docs.sglang.ai/advanced_features/speculative_decoding.html
+    terminate_process(server_process)
+
     # Print LIO Results
     print(f"LIO Results for {LIO_model_paths[0]}:")
     print(f"Dataset: Spec-Bench")
@@ -218,12 +238,6 @@ def main():
     print(f"Base Model: {base_model_paths[0]}")
     print("Mean Wall Time (ns): ", np.mean(wall_times))
     print("Mean Tokens Generated/s: ", np.mean(token_rates))
-
-    for task in servers:
-        server_process, port, client = servers[task]
-
-        # Below Code Line From: https://docs.sglang.ai/advanced_features/speculative_decoding.html
-        terminate_process(server_process)
 
     output_name = f"LIO_TaskSpecific_Output_{LIO_model_paths[0].replace('/', '-')}_{EAGLE_model_paths[0].replace('/', '-')}.jsonl" 
     
