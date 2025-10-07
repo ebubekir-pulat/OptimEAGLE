@@ -85,7 +85,7 @@ def main():
             {"role": "user", "content": LIO_prompt},
         ],
         temperature=0.0,
-        max_tokens=4096,
+        max_tokens=8192,
     )
 
     # Reference for below code line: https://stackoverflow.com/questions/77444332/openai-python-package-error-chatcompletion-object-is-not-subscriptable 
@@ -201,10 +201,6 @@ def main():
 
     for output in LIO_outputs:
         print(output)
-
-    subprocess.run(
-        ["hf", "auth", "logout", "--token", "token"], check=True
-    )
 
     print("\n\n*******************************\nFinished Running Chat_Template_Test.py\n\n")
 
