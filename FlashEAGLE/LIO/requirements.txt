@@ -1,0 +1,2 @@
+datasets==3.6.0
+sglang[all]>=0.5.3rc0
