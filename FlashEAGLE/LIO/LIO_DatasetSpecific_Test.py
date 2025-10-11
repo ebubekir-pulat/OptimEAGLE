@@ -102,8 +102,9 @@ def main():
     # Below Code Line From: https://docs.sglang.ai/advanced_features/speculative_decoding.html
     terminate_process(server_process)
 
+    print("LIO Output Before Processing:\n", LIO_output, "\nEND OF LIO OUTPUT")
     LIO_output = Data.extract_LIO_response(LIO_output)
-    print("LIO Output:\n", LIO_output, "\nEND OF LIO OUTPUT")
+    print("\n\nLIO Output:\n", LIO_output, "\nEND OF LIO OUTPUT")
 
     # Preparing SGLANG with EAGLE3
     # Below Code Block From: https://docs.sglang.ai/advanced_features/speculative_decoding.html
