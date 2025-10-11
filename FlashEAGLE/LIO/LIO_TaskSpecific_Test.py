@@ -96,7 +96,7 @@ def main():
                 DO NOT LIST THE PARAMETER IN BETWEEN THE DELIMITERS. Make sure to follow the format, and ensure your total output is within 8192 tokens MAXIMUM! \
                 REMEMBER TO OPTIMISE FOR THE {task} TASK TYPE SPECIFICALLY!"
         
-        print("Task: ", task, " LIO Prompt: ", LIO_prompt, "\nEND OF LIO PROMPT")
+        print("Task: ", task, " LIO Prompt:\n", LIO_prompt, "\nEND OF LIO PROMPT")
 
         # Below Code Block From: https://docs.sglang.ai/advanced_features/speculative_decoding.html
         response = client.chat.completions.create(
@@ -111,7 +111,7 @@ def main():
         # Reference for below code line: https://stackoverflow.com/questions/77444332/openai-python-package-error-chatcompletion-object-is-not-subscriptable 
         LIO_output = response.choices[0].message.content
         LIO_output = Data.extract_LIO_response(LIO_output)
-        print("Task: ", task, " LIO Output: ", LIO_output, "\nEND OF LIO OUTPUT")
+        print("Task: ", task, " LIO Output:\n", LIO_output, "\nEND OF LIO OUTPUT")
         optim_params[task] = LIO_output
 
     # Below Code Line From: https://docs.sglang.ai/advanced_features/speculative_decoding.html

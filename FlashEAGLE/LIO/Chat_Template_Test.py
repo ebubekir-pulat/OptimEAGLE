@@ -52,7 +52,7 @@ def main():
                 "stop_str": ["<|im_end|>", "<|im_start|>"] \
                 "}} \nBefore providing the chat template, put a #START delimiter, and when finished, put a #END delimiter.'
 
-    print("LIO Prompt:\n", LIO_prompt, "\nEND OF PROMPT")
+    print("LIO Prompt:\n", LIO_prompt, "\nEND OF LIO PROMPT")
 
     # Preparing LIO SGLANG
     # Below Code Block From: https://docs.sglang.ai/advanced_features/speculative_decoding.html, https://docs.sglang.ai/basic_usage/send_request.html
