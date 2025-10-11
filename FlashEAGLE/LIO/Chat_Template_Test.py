@@ -41,7 +41,7 @@ def main():
                 translation, summarisation, question answering, mathematical reasoning and retrieval-augmented generation, \
                 consisting of samples from the MT-bench, WMT14 DE-EN, CNN/Daily Mail, Natural Questions, GSM8K and DPR \
                 datasets. Generate a chat template file to feed into SGLANG\'s --chat-template parameter. \
-                This is an example chat template below, but be creative and make big changes for maximum performance gains \
+                There is an example chat template below, but be creative and make big changes for maximum performance gains \
                 to optimise accpentance length, tokens generated per second and wall-time speedup: \
                 {{"name": "my_model", \
                 "system": "<|im_start|>system", \
@@ -78,9 +78,10 @@ def main():
 
     # Reference for below code line: https://stackoverflow.com/questions/77444332/openai-python-package-error-chatcompletion-object-is-not-subscriptable 
     LIO_output = response.choices[0].message.content
+    print("LIO Output Before Processing:\n", LIO_output, "\nEND OF LIO OUTPUT")
     LIO_output = Data.extract_LIO_response(LIO_output)
 
-    print("LIO - Suggested Chat Template:\n", LIO_output, "\nEND OF CHAT TEMPLATE")
+    print("\n\nLIO - Suggested Chat Template:\n", LIO_output, "\nEND OF CHAT TEMPLATE")
 
     # Reference for below code block: https://www.w3schools.com/python/python_file_write.asp
     with open("ChatTemplate.json", "x") as f:
@@ -109,6 +110,7 @@ def main():
     temp = 0.0
 
     print("\nEvaluation Settings Chosen:")
+    print("Dataset: Spec-Bench")
     print("Test Runs: ", test_runs)
     print("Max New Tokens: ", max_new_tokens)
     print("Temperature: ", temp, "\n")
@@ -157,7 +159,7 @@ def main():
             LIO_outputs.append(model_output)
 
     # Print LIO Results
-    print(f"ChatTemplate Results for {LIO_model_paths[0]}:")
+    print(f"Chat Template Test Results for {LIO_model_paths[0]}:")
     print(f"Dataset: Spec-Bench")
     print(f"EAGLE-3 Model: {EAGLE_model_paths[0]}")
     print(f"Base Model: {base_model_paths[0]}")
