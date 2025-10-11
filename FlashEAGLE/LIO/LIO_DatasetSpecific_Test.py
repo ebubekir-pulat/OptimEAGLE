@@ -8,29 +8,15 @@ subprocess.run(
 )
 
 subprocess.run(
-    ["pip", "install", "uv"], check=True
-)
-
-subprocess.run(
-    ["uv", "pip", "install", "sglang[all]>=0.5.3rc0"], check=True
-)
-
-subprocess.run(
-    ["pip", "install", "numpy==1.26.4"], check=True
-)
-
-subprocess.run(
     ["nvidia-smi"], check=True
 )
 
 import time
 import numpy as np
-import json
 from sglang.test.doc_patch import launch_server_cmd
 from sglang.utils import wait_for_server, terminate_process
 import openai
 import Data
-import hashlib
 
 def main():
     print("\n\n*******************************\nStarting LIO_DatasetSpecific_Test.py\n\n")
@@ -185,13 +171,7 @@ def main():
             output_tokens.append(new_tokens)
 
             input_tokens.append(response.usage.prompt_tokens)
-
-            # Below Code Block From: https://github.com/sgl-project/SpecForge/blob/main/scripts/prepare_data.py
-            output = {
-                "id": hashlib.md5((str(test_run) + prompt + model_output).encode()).hexdigest(),
-                "output": model_output
-            }
-            LIO_outputs.append(output)
+            LIO_outputs.append(model_output)
 
     # Print LIO Results
     print(f"LIO Results for {LIO_model_paths[0]}:")
@@ -203,13 +183,6 @@ def main():
 
     # Below Code Line From: https://docs.sglang.ai/advanced_features/speculative_decoding.html
     terminate_process(server_process)
-
-    output_name = f"LIO_DatasetSpecific_Output_{LIO_model_paths[0].replace('/', '-')}_{EAGLE_model_paths[0].replace('/', '-')}.jsonl" 
-    
-    # Below Code Block From: https://github.com/sgl-project/SpecForge/blob/main/scripts/prepare_data.py
-    with open(output_name, "x") as f:
-        for output in LIO_outputs:
-            f.write(json.dumps(output) + "\n")
 
     print("Walltimes Array: ", wall_times)
     print("Input Tokens Array: ", input_tokens)
@@ -243,11 +216,8 @@ Linguistics, Nov. 2024, pp. 7421–7432. [Online]. Available: https://aclantholo
 3. Y. Li, F. Wei, C. Zhang, and H. Zhang, “Eagle-3: Scaling up inference acceleration of large language models
 via training-time test,” 2025. [Online]. Available: https://arxiv.org/abs/2503.01840
 
-4. C. W. F. Y. S. S. Y. W. Y. Z. Y. H. H. Z. Y. Z. Shenggui Li, Yikai Zhu, “Specforge: Train speculative decoding
-models effortlessly,” https://github.com/sgl-project/specforge, 2025.
+4. OpenAI, “gpt-oss-120b gpt-oss-20b model card,” 2025. [Online]. Available: https://arxiv.org/abs/2508.10925
 
-5. OpenAI, “gpt-oss-120b gpt-oss-20b model card,” 2025. [Online]. Available: https://arxiv.org/abs/2508.10925
-
-6. Q. Team, “Qwen3 technical report,” 2025. [Online]. Available: https://arxiv.org/abs/2505.09388
+5. Q. Team, “Qwen3 technical report,” 2025. [Online]. Available: https://arxiv.org/abs/2505.09388
 
 '''

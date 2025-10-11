@@ -5,11 +5,9 @@
 import time
 import numpy as np
 import torch
-import json
 from eagle.model.ea_model import EaModel
 from fastchat.model import get_conversation_template
 import Data
-import hashlib
 import sys
 
 def main(test_id):
@@ -87,12 +85,7 @@ def main(test_id):
             avg_accept_len = new_tokens / steps
             avg_accept_lens.append(avg_accept_len)
 
-            # Below Code Block From: https://github.com/sgl-project/SpecForge/blob/main/scripts/prepare_data.py
-            output = {
-                "id": hashlib.md5((str(test_run) + sb_prompt + Data.extract_response(kv_output)).encode()).hexdigest(),
-                "output": Data.extract_response(kv_output)
-            }
-            KVTest_outputs.append(output)
+            KVTest_outputs.append(Data.extract_response(kv_output))
 
     # Print KV Cache Test Results
     print(f"KV Cache Test Results for {EAGLE_model_paths[0]}:")
@@ -100,11 +93,6 @@ def main(test_id):
     print("Mean Wall Time (ns): ", np.mean(wall_times))
     print("Mean Tokens Generated/s: ", np.mean(token_rates))
     print("Average Acceptance Length: ", np.mean(avg_accept_lens))
-
-    # Below Code Block From: https://github.com/sgl-project/SpecForge/blob/main/scripts/prepare_data.py
-    with open(f"KV_Cache_Test_Output_{EAGLE_model_paths[0].replace('/', '-')}_{test_id}.jsonl", "x") as f:
-        for output in KVTest_outputs:
-            f.write(json.dumps(output) + "\n")
 
     print("\n\nOutput Data: \n")
 
@@ -136,10 +124,7 @@ Linguistics, Nov. 2024, pp. 7421–7432. [Online]. Available: https://aclantholo
 4. Y. Li, F. Wei, C. Zhang, and H. Zhang, “Eagle-3: Scaling up inference acceleration of large language models
 via training-time test,” 2025. [Online]. Available: https://arxiv.org/abs/2503.01840
 
-5. C. W. F. Y. S. S. Y. W. Y. Z. Y. H. H. Z. Y. Z. Shenggui Li, Yikai Zhu, “Specforge: Train speculative decoding
-models effortlessly,” https://github.com/sgl-project/specforge, 2025.
-
-6. L. Zheng, W.-L. Chiang, Y. Sheng, S. Zhuang, Z. Wu, Y. Zhuang, Z. Lin, Z. Li, D. Li, E. P. Xing, H. Zhang,
+5. L. Zheng, W.-L. Chiang, Y. Sheng, S. Zhuang, Z. Wu, Y. Zhuang, Z. Lin, Z. Li, D. Li, E. P. Xing, H. Zhang,
 J. E. Gonzalez, and I. Stoica, “Judging llm-as-a-judge with mt-bench and chatbot arena,” in Proceedings of
 the 37th International Conference on Neural Information Processing Systems, ser. NIPS ’23. Red Hook, NY,
 USA: Curran Associates Inc., 2023. 

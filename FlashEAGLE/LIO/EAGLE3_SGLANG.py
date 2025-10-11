@@ -8,29 +8,15 @@ subprocess.run(
 )
 
 subprocess.run(
-    ["pip", "install", "uv"], check=True
-)
-
-subprocess.run(
-    ["uv", "pip", "install", "sglang[all]>=0.5.3rc0"], check=True
-)
-
-subprocess.run(
-    ["pip", "install", "numpy==1.26.4"], check=True
-)
-
-subprocess.run(
     ["nvidia-smi"], check=True
 )
 
 import time
 import numpy as np
-import json
 from sglang.test.doc_patch import launch_server_cmd
 from sglang.utils import wait_for_server, terminate_process
 import openai
 import Data
-import hashlib
 
 def main():
     print("\n\n*******************************\nStarting EAGLE3_SGLANG.py\n\n")
@@ -52,7 +38,7 @@ def main():
     server_process, port = launch_server_cmd(
         f"""
     python3 -m sglang.launch_server --model {base_model_paths[0]}  --speculative-algorithm EAGLE3 \
-        --speculative-draft-model-path {EAGLE_model_paths[0]} --dtype float16
+        --speculative-draft-model-path {EAGLE_model_paths[0]}
     """
     )
 
@@ -113,13 +99,7 @@ def main():
             output_tokens.append(new_tokens)
 
             input_tokens.append(response.usage.prompt_tokens)
-
-            # Below Code Block From: https://github.com/sgl-project/SpecForge/blob/main/scripts/prepare_data.py
-            output = {
-                "id": hashlib.md5((str(test_run) + prompt + eagle3_output).encode()).hexdigest(),
-                "output": eagle3_output
-            }
-            eagle3_outputs.append(output)
+            eagle3_outputs.append(eagle3_output)
 
     # Print EAGLE-3 Results
     print(f"EAGLE-3 Results For {EAGLE_model_paths[0]}:")
@@ -129,13 +109,6 @@ def main():
 
     # Below Code Line From: https://docs.sglang.ai/advanced_features/speculative_decoding.html
     terminate_process(server_process)
-
-    output_name = f"EAGLE3_SGLANG_Output_{EAGLE_model_paths[0].replace('/', '-')}_Spec-Bench.jsonl" 
-
-    # Below Code Block From: https://github.com/sgl-project/SpecForge/blob/main/scripts/prepare_data.py
-    with open(output_name, "x") as f:
-        for output in eagle3_outputs:
-            f.write(json.dumps(output) + "\n")
 
     print("Walltimes Array: ", wall_times)
     print("Input Tokens Array: ", input_tokens)
@@ -169,9 +142,6 @@ Linguistics, Nov. 2024, pp. 7421–7432. [Online]. Available: https://aclantholo
 3. Y. Li, F. Wei, C. Zhang, and H. Zhang, “Eagle-3: Scaling up inference acceleration of large language models
 via training-time test,” 2025. [Online]. Available: https://arxiv.org/abs/2503.01840
 
-4. C. W. F. Y. S. S. Y. W. Y. Z. Y. H. H. Z. Y. Z. Shenggui Li, Yikai Zhu, “Specforge: Train speculative decoding
-models effortlessly,” https://github.com/sgl-project/specforge, 2025.
-
-5. Q. Team, “Qwen3 technical report,” 2025. [Online]. Available: https://arxiv.org/abs/2505.09388
+4. Q. Team, “Qwen3 technical report,” 2025. [Online]. Available: https://arxiv.org/abs/2505.09388
 
 '''
