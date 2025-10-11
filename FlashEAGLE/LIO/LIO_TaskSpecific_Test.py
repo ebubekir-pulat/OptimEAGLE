@@ -110,6 +110,7 @@ def main():
 
         # Reference for below code line: https://stackoverflow.com/questions/77444332/openai-python-package-error-chatcompletion-object-is-not-subscriptable 
         LIO_output = response.choices[0].message.content
+        print("Task: ", task, " LIO Output Before Processing:\n", LIO_output, "\nEND OF LIO OUTPUT")
         LIO_output = Data.extract_LIO_response(LIO_output)
         print("Task: ", task, " LIO Output:\n", LIO_output, "\nEND OF LIO OUTPUT")
         optim_params[task] = LIO_output
@@ -226,8 +227,8 @@ def main():
 
     print("\n\nOutput Data: \n")
 
-    for output in LIO_outputs:
-        print(output)
+    for i in range(len(LIO_outputs)):
+        print(LIO_outputs[i])
 
     print("\n\n*******************************\nFinished Running LIO_TaskSpecific_Test.py\n\n")
 
