@@ -42,7 +42,7 @@ def main():
                 consisting of samples from the MT-bench, WMT14 DE-EN, CNN/Daily Mail, Natural Questions, GSM8K and DPR \
                 datasets. Generate a chat template file to feed into SGLANG\'s --chat-template parameter. \
                 There is an example chat template below, but be creative and make big changes for maximum performance gains \
-                to optimise accpentance length, tokens generated per second and wall-time speedup: \
+                to optimise acceptance length, tokens generated per second and wall-time speedup: \
                 {{"name": "my_model", \
                 "system": "<|im_start|>system", \
                 "user": ""<|im_start|>user"", \
