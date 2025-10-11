@@ -117,8 +117,8 @@ def main():
 
     print("\n\nOutput Data: \n")
 
-    for output in eagle3_outputs:
-        print(output)
+    for i in range(len(eagle3_outputs)):
+        print(eagle3_outputs[i])
 
     print("\n\n*******************************\nFinished Running EAGLE3_SGLANG.py\n\n")
 

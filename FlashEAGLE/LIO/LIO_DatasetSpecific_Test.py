@@ -192,8 +192,8 @@ def main():
 
     print("\n\nOutput Data: \n")
 
-    for output in LIO_outputs:
-        print(output)
+    for i in range(len(LIO_outputs)):
+        print(LIO_outputs[i])
 
     print("\n\n*******************************\nFinished Running LIO_DatasetSpecific_Test.py\n\n")
 
