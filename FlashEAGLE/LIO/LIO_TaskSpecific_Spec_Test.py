@@ -62,9 +62,9 @@ def main():
                     the dataset to be tested on is Spec-Bench. Spec-Bench is a benchmark covering multi-turn conversation, \
                     translation, summarisation, question answering, mathematical reasoning and retrieval-augmented generation, \
                     consisting of samples from the MT-bench, WMT14 DE-EN, CNN/Daily Mail, Natural Questions, GSM8K and DPR \
-                    datasets. The specific task type to optimise for is {task}. Choose hyperparameters that optimise acceptance length, tokens generated per second and \
-                    wall-time speedup. Provide values for these parameters: --speculative-num-steps, --speculative-eagle-topk, --speculative-num-draft-tokens and \
-                    --speculative-attention-mode (prefill or decode). Generate the hyperparameters in the format --parameter-name value, with spaces in between. \
+                    datasets. The specific task type to optimise for is {task}. Provide hyperparameters that optimise acceptance length, tokens generated per second and \
+                    wall-time speedup. Specifically, provide values for these parameters: --speculative-num-steps, --speculative-eagle-topk, --speculative-num-draft-tokens and \
+                    --speculative-attention-mode (prefill or decode). Avoid extreme values that can cause errors. Generate the hyperparameters in the format --parameter-name value, with spaces in between. \
                     Before providing the hyperparameters, put a #START delimiter, and when finished, put a #END delimiter. THIS IS IMPORTANT. \
                     Make sure to follow the format, and ensure your total output is within 8192 tokens MAXIMUM! \
                     REMEMBER TO OPTIMISE FOR THE {task} TASK TYPE SPECIFICALLY!"
