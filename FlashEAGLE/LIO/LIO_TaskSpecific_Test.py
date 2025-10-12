@@ -91,7 +91,7 @@ def main():
                 --disable-shared-experts-fusion (To Select Option, Simply Write Parameter). Generate the hyperparameters in the format --parameter-name value, \
                 with spaces in between. For parameters where I have specified, 'To Select Option, Simply Write Parameter', don't include \
                 a value if you want to use that setting, and don't write the parameter at all if you don't want that setting. For parameters where I have specified options, \
-                those are the only available values to choose from. Before providing the hyperparameters, \
+                those are the only available values to choose from, don't write anything else. Before providing the hyperparameters, \
                 put a #START delimiter, and when finished, put a #END delimiter. THIS IS IMPORTANT. Note, if choosing to keep the default value for a parameter, \
                 DO NOT LIST THE PARAMETER IN BETWEEN THE DELIMITERS. Make sure to follow the format, and ensure your total output is within 8192 tokens MAXIMUM! \
                 REMEMBER TO OPTIMISE FOR THE {task} TASK TYPE SPECIFICALLY!"
