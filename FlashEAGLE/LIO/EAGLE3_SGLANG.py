@@ -116,9 +116,7 @@ def main():
     print("Tokens Generated Per Second Array: ", token_rates)
 
     print("\n\nOutput Data: \n")
-
-    for i in range(len(eagle3_outputs)):
-        print(eagle3_outputs[i])
+    print(eagle3_outputs)
 
     print("\n\n*******************************\nFinished Running EAGLE3_SGLANG.py\n\n")
 

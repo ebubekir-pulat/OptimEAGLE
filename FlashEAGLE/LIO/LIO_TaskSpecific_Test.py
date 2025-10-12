@@ -226,9 +226,7 @@ def main():
     print("Tokens Generated Per Second Array: ", token_rates)
 
     print("\n\nOutput Data: \n")
-
-    for i in range(len(LIO_outputs)):
-        print(LIO_outputs[i])
+    print(LIO_outputs)
 
     print("\n\n*******************************\nFinished Running LIO_TaskSpecific_Test.py\n\n")
 
