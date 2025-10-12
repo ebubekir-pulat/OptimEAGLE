@@ -63,7 +63,7 @@ def main():
                     translation, summarisation, question answering, mathematical reasoning and retrieval-augmented generation, \
                     consisting of samples from the MT-bench, WMT14 DE-EN, CNN/Daily Mail, Natural Questions, GSM8K and DPR \
                     datasets. The specific task type to optimise for is {task}. Choose hyperparameters that optimise acceptance length, tokens generated per second and \
-                    wall-time speedup. Provide values for these parameters, or ignore them if you intend to keep the default value: --kv-cache-dtype ('auto', 'fp8_e5m2', 'fp8_e4m3'), \
+                    wall-time speedup. Provide values for these parameters, or ignore them if you intend to keep the default value: --kv-cache-dtype ('auto', 'fp8_e5m2'), \
                     --stream-interval, --max-prefill-tokens, --chunked-prefill-size, --speculative-num-steps, \
                 --disable-outlines-disk-cache (To Select Option, Simply Write Parameter), --enable-tokenizer-batch-encode (To Select Option, Simply Write Parameter), \
                 --speculative-eagle-topk, --speculative-num-draft-tokens, --speculative-attention-mode (prefill or decode), \
