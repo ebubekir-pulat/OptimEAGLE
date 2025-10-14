@@ -14,13 +14,11 @@ subprocess.run(
 
 import time
 import numpy as np
-import json
 from sglang.test.doc_patch import launch_server_cmd
 from sglang.utils import wait_for_server, terminate_process
 import openai
 import Data
 import Compress
-import hashlib
 import sys
 
 def main(eagle3, translate):
@@ -128,13 +126,7 @@ def main(eagle3, translate):
             output_tokens.append(new_tokens)
 
             input_tokens.append(response.usage.prompt_tokens)
-
-            # Below Code Block From: https://github.com/sgl-project/SpecForge/blob/main/scripts/prepare_data.py
-            output = {
-                "id": hashlib.md5((str(test_run) + prompt + aai_output).encode()).hexdigest(),
-                "output": aai_output
-            }
-            AAI_outputs.append(output)
+            AAI_outputs.append(aai_output)
 
     # Print AAI Results
     if eagle3 == True:
@@ -147,30 +139,13 @@ def main(eagle3, translate):
     # Below Code Line From: https://docs.sglang.ai/advanced_features/speculative_decoding.html
     terminate_process(server_process)
 
-    translate_tag = ""
-
-    if translate == True:
-        translate_tag = "_Translate"
-
-    if eagle3 == True:
-        output_name = f"AAI_Output_EAGLE3_{EAGLE_model_paths[0].replace('/', '-')}{translate_tag}.jsonl" 
-    else:
-        output_name = f"AAI_Output_AutoReg_{base_model_paths[0].replace('/', '-')}{translate_tag}.jsonl" 
-
-    # Below Code Block From: https://github.com/sgl-project/SpecForge/blob/main/scripts/prepare_data.py
-    with open(output_name, "x") as f:
-        for output in AAI_outputs:
-            f.write(json.dumps(output) + "\n")
-
     print("Input Tokens Array: ", input_tokens)
     print("Output Tokens Array: ", output_tokens)
     print("Tokens Generated Per Second Array: ", token_rates)
     print("Walltimes Array: ", wall_times)
 
     print("\n\nOutput Data: \n")
-
-    for output in AAI_outputs:
-        print(output)
+    print(AAI_outputs)
 
     print("\n\n*******************************\nFinished Running AAI_Test.py\n\n")
 
@@ -196,9 +171,6 @@ Linguistics, Nov. 2024, pp. 7421–7432. [Online]. Available: https://aclantholo
 3. Y. Li, F. Wei, C. Zhang, and H. Zhang, “Eagle-3: Scaling up inference acceleration of large language models
 via training-time test,” 2025. [Online]. Available: https://arxiv.org/abs/2503.01840
 
-4. C. W. F. Y. S. S. Y. W. Y. Z. Y. H. H. Z. Y. Z. Shenggui Li, Yikai Zhu, “Specforge: Train speculative decoding
-models effortlessly,” https://github.com/sgl-project/specforge, 2025.
-
-5. Q. Team, “Qwen3 technical report,” 2025. [Online]. Available: https://arxiv.org/abs/2505.09388
+4. Q. Team, “Qwen3 technical report,” 2025. [Online]. Available: https://arxiv.org/abs/2505.09388
 
 '''

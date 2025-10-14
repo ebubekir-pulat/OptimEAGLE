@@ -14,13 +14,11 @@ subprocess.run(
 
 import time
 import numpy as np
-import json
 from sglang.test.doc_patch import launch_server_cmd
 from sglang.utils import wait_for_server, terminate_process
 import openai
 import Data
 import Compress
-import hashlib
 import sys
 
 def main(eagle3, summarise, sentence_retrieve, retrieve_type):
@@ -142,13 +140,7 @@ def main(eagle3, summarise, sentence_retrieve, retrieve_type):
             output_tokens.append(new_tokens)
 
             input_tokens.append(response.usage.prompt_tokens)
-
-            # Below Code Block From: https://github.com/sgl-project/SpecForge/blob/main/scripts/prepare_data.py
-            output = {
-                "id": hashlib.md5((str(test_run) + prompt + lb_output).encode()).hexdigest(),
-                "output": lb_output
-            }
-            LB_outputs.append(output)
+            LB_outputs.append(lb_output)
 
     # Print LongBench-E Results
     if eagle3 == True:
@@ -161,22 +153,6 @@ def main(eagle3, summarise, sentence_retrieve, retrieve_type):
     # Below Code Line From: https://docs.sglang.ai/advanced_features/speculative_decoding.html
     terminate_process(server_process)
 
-    compression_tag = ""
-    if summarise == True:
-        compression_tag = "_Summ"
-    elif sentence_retrieve == True:
-        compression_tag = "_SR_" + retrieve_type 
-
-    if eagle3 == True:
-        output_name = f"LBE_Output_EAGLE3_{EAGLE_model_paths[0].replace('/', '-')}{compression_tag}.jsonl" 
-    else:
-        output_name = f"LBE_Output_AutoReg_{base_model_paths[0].replace('/', '-')}{compression_tag}.jsonl" 
-
-    # Below Code Block From: https://github.com/sgl-project/SpecForge/blob/main/scripts/prepare_data.py
-    with open(output_name, "x") as f:
-        for output in LB_outputs:
-            f.write(json.dumps(output) + "\n")
-
     print("Mean Input Tokens: ", np.mean(input_tokens))
     print("Input Tokens Array: ", input_tokens)
     print("Output Tokens Array: ", output_tokens)
@@ -184,9 +160,7 @@ def main(eagle3, summarise, sentence_retrieve, retrieve_type):
     print("Walltimes Array: ", wall_times)
 
     print("\n\nOutput Data: \n")
-
-    for output in LB_outputs:
-        print(output)
+    print(LB_outputs)
 
     print("\n\n*******************************\nFinished Running Longbench_E_Test.py\n\n")
 
@@ -210,9 +184,6 @@ Linguistics, Nov. 2024, pp. 7421–7432. [Online]. Available: https://aclantholo
 3. Y. Li, F. Wei, C. Zhang, and H. Zhang, “Eagle-3: Scaling up inference acceleration of large language models
 via training-time test,” 2025. [Online]. Available: https://arxiv.org/abs/2503.01840
 
-4. C. W. F. Y. S. S. Y. W. Y. Z. Y. H. H. Z. Y. Z. Shenggui Li, Yikai Zhu, “Specforge: Train speculative decoding
-models effortlessly,” https://github.com/sgl-project/specforge, 2025.
-
-5. Q. Team, “Qwen3 technical report,” 2025. [Online]. Available: https://arxiv.org/abs/2505.09388
+4. Q. Team, “Qwen3 technical report,” 2025. [Online]. Available: https://arxiv.org/abs/2505.09388
 
 '''
