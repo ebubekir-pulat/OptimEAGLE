@@ -9,14 +9,6 @@ subprocess.run(
 )
 
 subprocess.run(
-    ["pip", "install", "uv"], check=True
-)
-
-subprocess.run(
-    ["uv", "pip", "install", "sglang[all]>=0.5.3rc0"], check=True
-)
-
-subprocess.run(
     ["nvidia-smi"], check=True
 )
 
