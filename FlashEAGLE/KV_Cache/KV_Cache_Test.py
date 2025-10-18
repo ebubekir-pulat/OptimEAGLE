@@ -1,6 +1,6 @@
-# KV Cache Experimentation
+# Code For KV Cache Experimentation
 # Hyperparameters are "test_runs", "max_new_tokens", "temp", "test_id"
-# test_id defines KV Cache Test ID
+# test_id defines the KV Cache Test ID
 
 import time
 import numpy as np
@@ -71,8 +71,8 @@ def main(test_id):
             # Below Code Line From: https://github.com/SafeAILab/EAGLE
             kv_output = model.tokenizer.decode(output_ids[0][0])
 
-            print("Original Output: ", kv_output)
-            print("\nParsed Output: ", Data.extract_response(kv_output), end="\n")
+            #print("Original Output: ", kv_output)
+            #print("\nParsed Output: ", Data.extract_response(kv_output), end="\n")
 
             elapsed = finish - start
             wall_times.append(elapsed)
@@ -86,7 +86,7 @@ def main(test_id):
             avg_accept_len = new_tokens / steps
             avg_accept_lens.append(avg_accept_len)
 
-            KVTest_outputs.append(Data.extract_response(kv_output))
+            KVTest_outputs.append(kv_output)
 
     # Print KV Cache Test Results
     print(f"KV Cache Test Results for {EAGLE_model_paths[0]}:")
