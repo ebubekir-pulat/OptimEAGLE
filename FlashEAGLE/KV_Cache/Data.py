@@ -16,16 +16,12 @@ def specbench_tasks():
     sb_tasks = sb_tasks[80:]
     return sb_tasks
 
-'''
-
 def extract_response(model_output):
     response_index = model_output.find("### Assistant: ", 300) + len("### Assistant: ")
     model_output = model_output[response_index:]
     model_output = model_output[:model_output.find("### Human:")]
     model_output = model_output.strip()
     return model_output
-
-'''
 
 def extract_LIO_response(model_output):
     # Reference for below code line: https://stackoverflow.com/questions/3368969/find-string-between-two-substrings
