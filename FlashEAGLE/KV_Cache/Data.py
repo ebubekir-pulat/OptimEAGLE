@@ -8,24 +8,11 @@ def specbench():
     sb_prompts = sb_prompts[80:]
     return sb_prompts
 
-def specbench_tasks():
-    # Get Spec-Bench Data from: https://github.com/hemingkx/Spec-Bench/blob/main/data/spec_bench/question.jsonl 
-    # Below line from: https://stackoverflow.com/questions/50475635/loading-jsonl-file-as-json-objects
-    jsonObj = pd.read_json(path_or_buf='question.jsonl', lines=True)
-    sb_tasks = [jsonObj.at[i, 'category'] for i in range(len(jsonObj))]
-    sb_tasks = sb_tasks[80:]
-    return sb_tasks
-
 def extract_response(model_output):
     response_index = model_output.find("### Assistant: ", 300) + len("### Assistant: ")
     model_output = model_output[response_index:]
     model_output = model_output[:model_output.find("### Human:")]
     model_output = model_output.strip()
-    return model_output
-
-def extract_LIO_response(model_output):
-    # Reference for below code line: https://stackoverflow.com/questions/3368969/find-string-between-two-substrings
-    model_output = model_output[model_output.rfind('#START') + len('#START') : model_output.rfind('#END')]
     return model_output
 
 
