@@ -1,5 +1,5 @@
 # KV Cache Experimentation
-# Hyperparameters are "test_runs", "max_new_tokens", "temp"
+# Hyperparameters are "test_runs", "max_new_tokens", "temp", "test_id"
 # test_id defines KV Cache Test ID
 
 import time
@@ -24,9 +24,7 @@ def main(test_id):
         base_model_path=base_model_paths[0],
         ea_model_path=EAGLE_model_paths[0],
         torch_dtype=torch.float16,
-        device_map="auto",
-        attn_implementation="flash_attention_2",
-        trust_remote_code=True
+        device_map="auto"
     )
     model.eval()
 
@@ -73,6 +71,9 @@ def main(test_id):
             # Below Code Line From: https://github.com/SafeAILab/EAGLE
             kv_output = model.tokenizer.decode(output_ids[0][0])
 
+            print("Original Output: ", kv_output)
+            print("\nParsed Output: ", Data.extract_response(kv_output), end="\n")
+
             elapsed = finish - start
             wall_times.append(elapsed)
 
@@ -81,7 +82,7 @@ def main(test_id):
             token_rates.append(tokens_per_second)
 
             # Reference for below code block: https://github.com/SafeAILab/EAGLE/issues/153
-            steps = int(output_ids[2])
+            steps = output_ids[2]
             avg_accept_len = new_tokens / steps
             avg_accept_lens.append(avg_accept_len)
 
@@ -89,20 +90,19 @@ def main(test_id):
 
     # Print KV Cache Test Results
     print(f"KV Cache Test Results for {EAGLE_model_paths[0]}:")
+    print("Test ID: ", test_id)
     print("Base Model: ", base_model_paths[0])
     print("Mean Wall Time (ns): ", np.mean(wall_times))
     print("Mean Tokens Generated/s: ", np.mean(token_rates))
     print("Average Acceptance Length: ", np.mean(avg_accept_lens))
 
     print("\n\nOutput Data: \n")
-
-    for output in KVTest_outputs:
-        print(output)
+    print(KVTest_outputs)
 
     print("\n\n*******************************\nFinished Running KV_Cache_Test.py\n\n")
 
 if __name__ == "__main__":
-    main(sys.argv[1])
+    main(int(sys.argv[1]))
 
 '''
 References
