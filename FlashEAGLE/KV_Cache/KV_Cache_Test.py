@@ -1,6 +1,5 @@
 # Code For KV Cache Experimentation
-# Hyperparameters are "test_runs", "max_new_tokens", "temp", "test_id"
-# test_id defines the KV Cache Test ID
+# Hyperparameters are "test_runs", "max_new_tokens", "temp"
 
 import time
 import numpy as np
@@ -8,15 +7,20 @@ import torch
 from eagle.model.ea_model import EaModel
 from fastchat.model import get_conversation_template
 import Data
-import sys
 import subprocess
 
 subprocess.run(
     ["nvidia-smi"], check=True
 )
 
-def main(test_id):
+def main():
     print("\n\n*******************************\nStarting KV_Cache_Test.py\n\n")
+
+    print("Python Version:")
+
+    subprocess.run(
+        ["python", "--version"], check=True
+    )
 
     base_model_paths = ["deepseek-ai/DeepSeek-R1-Distill-Llama-8B"]
     EAGLE_model_paths = ["yuhuili/EAGLE3-DeepSeek-R1-Distill-LLaMA-8B"]
@@ -92,12 +96,11 @@ def main(test_id):
             avg_accept_len = new_tokens / steps
             avg_accept_lens.append(avg_accept_len)
 
-            KVTest_parsed_outputs.append(Data.extract_response(kv_output))
             KVTest_outputs.append(kv_output)
+            KVTest_parsed_outputs.append(Data.extract_response(kv_output))
 
     # Print KV Cache Test Results
     print(f"KV Cache Test Results for {EAGLE_model_paths[0]}:")
-    print("Test ID: ", test_id)
     print("Base Model: ", base_model_paths[0])
     print("Mean Wall Time (ns): ", np.mean(wall_times))
     print("Mean Tokens Generated/s: ", np.mean(token_rates))
@@ -112,7 +115,7 @@ def main(test_id):
     print("\n\n*******************************\nFinished Running KV_Cache_Test.py\n\n")
 
 if __name__ == "__main__":
-    main(int(sys.argv[1]))
+    main()
 
 '''
 References
