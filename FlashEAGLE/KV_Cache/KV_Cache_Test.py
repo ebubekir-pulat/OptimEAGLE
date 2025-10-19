@@ -9,6 +9,11 @@ from eagle.model.ea_model import EaModel
 from fastchat.model import get_conversation_template
 import Data
 import sys
+import subprocess
+
+subprocess.run(
+    ["nvidia-smi"], check=True
+)
 
 def main(test_id):
     print("\n\n*******************************\nStarting KV_Cache_Test.py\n\n")
@@ -29,6 +34,7 @@ def main(test_id):
     model.eval()
 
     KVTest_outputs = []
+    KVTest_parsed_outputs = []
     # Hyperparameters
     test_runs = 3
     max_new_tokens = 1024
@@ -86,6 +92,7 @@ def main(test_id):
             avg_accept_len = new_tokens / steps
             avg_accept_lens.append(avg_accept_len)
 
+            KVTest_parsed_outputs.append(Data.extract_response(kv_output))
             KVTest_outputs.append(kv_output)
 
     # Print KV Cache Test Results
@@ -96,8 +103,11 @@ def main(test_id):
     print("Mean Tokens Generated/s: ", np.mean(token_rates))
     print("Average Acceptance Length: ", np.mean(avg_accept_lens))
 
-    print("\n\nOutput Data: \n")
+    print("\n\nRaw Output Data: \n")
     print(KVTest_outputs)
+
+    print("\n\nParsed Output Data: \n")
+    print(KVTest_parsed_outputs)
 
     print("\n\n*******************************\nFinished Running KV_Cache_Test.py\n\n")
 
