@@ -9,7 +9,6 @@ def main():
                         use_fp16=True)
     
     # Comparing Autoregressive Decoding Outputs
-
     # Note: Copy Experimental Output Into Corresponding Empty Arrays
     autoreg_standard = []
     autoreg_summ = []
@@ -17,34 +16,77 @@ def main():
     autoreg_ranked = []
     autoreg_similarity_scores = []
     
-    for i in range(len(autoreg_notrans)):
-        embeddings_1 = model.encode(autoreg_notrans[i])['dense_vecs']
-        embeddings_2 = model.encode(autoreg_trans[i])['dense_vecs']
+    # Output Quality of AutoReg-summ
+    for i in range(len(autoreg_standard)):
+        embeddings_1 = model.encode(autoreg_standard[i])['dense_vecs']
+        embeddings_2 = model.encode(autoreg_summ[i])['dense_vecs']
         similarity = embeddings_1 @ embeddings_2.T
         autoreg_similarity_scores.append(similarity)
 
-    print("\nMean Similarity Score Between AutoReg-NoTranslate & AutoReg-Translate: ", np.mean(autoreg_similarity_scores))
+    print("\nMean Similarity Score Between AutoReg-Standard & AutoReg-Summ: ", np.mean(autoreg_similarity_scores))
+
+    # Output Quality of AutoReg-skip
+    autoreg_similarity_scores = []
+    
+    for i in range(len(autoreg_standard)):
+        embeddings_1 = model.encode(autoreg_standard[i])['dense_vecs']
+        embeddings_2 = model.encode(autoreg_skip[i])['dense_vecs']
+        similarity = embeddings_1 @ embeddings_2.T
+        autoreg_similarity_scores.append(similarity)
+
+    print("\nMean Similarity Score Between AutoReg-Standard & AutoReg-skip: ", np.mean(autoreg_similarity_scores))
+
+    # Output Quality of AutoReg-ranked
+    autoreg_similarity_scores = []
+    
+    for i in range(len(autoreg_standard)):
+        embeddings_1 = model.encode(autoreg_standard[i])['dense_vecs']
+        embeddings_2 = model.encode(autoreg_ranked[i])['dense_vecs']
+        similarity = embeddings_1 @ embeddings_2.T
+        autoreg_similarity_scores.append(similarity)
+
+    print("\nMean Similarity Score Between AutoReg-Standard & AutoReg-ranked: ", np.mean(autoreg_similarity_scores))
 
     # Comparing EAGLE-3 Outputs
-
     # Note: Copy Experimental Output Into Corresponding Empty Arrays
     eagle3_standard = []
     eagle3_summ = []
     eagle3_skip = []
     eagle3_ranked = []
-    
-    # Output Quality of EAGLE-SUMM
     eagle3_similarity_scores = []
-    
+
+    # Output Quality of EAGLE3-summ
     for i in range(len(eagle3_standard)):
         embeddings_1 = model.encode(eagle3_standard[i])['dense_vecs']
         embeddings_2 = model.encode(eagle3_summ[i])['dense_vecs']
         similarity = embeddings_1 @ embeddings_2.T
         eagle3_similarity_scores.append(similarity)
 
-    print("\nMean Similarity Score Between EAGLE3-NoTranslate & EAGLE3-Translate: ", np.mean(eagle3_similarity_scores))
+    print("\nMean Similarity Score Between EAGLE3-Standard & EAGLE3-Summ: ", np.mean(eagle3_similarity_scores))
 
-    print("\n\n*******************************\nFinished Running AAI_Output_Similarity.py\n\n")
+    # Output Quality of EAGLE3-skip
+    eagle3_similarity_scores = []
+
+    for i in range(len(eagle3_standard)):
+        embeddings_1 = model.encode(eagle3_standard[i])['dense_vecs']
+        embeddings_2 = model.encode(eagle3_skip[i])['dense_vecs']
+        similarity = embeddings_1 @ embeddings_2.T
+        eagle3_similarity_scores.append(similarity)
+
+    print("\nMean Similarity Score Between EAGLE3-Standard & EAGLE3-skip: ", np.mean(eagle3_similarity_scores))
+
+    # Output Quality of EAGLE3-ranked
+    eagle3_similarity_scores = []
+
+    for i in range(len(eagle3_standard)):
+        embeddings_1 = model.encode(eagle3_standard[i])['dense_vecs']
+        embeddings_2 = model.encode(eagle3_ranked[i])['dense_vecs']
+        similarity = embeddings_1 @ embeddings_2.T
+        eagle3_similarity_scores.append(similarity)
+
+    print("\nMean Similarity Score Between EAGLE3-Standard & EAGLE3-ranked: ", np.mean(eagle3_similarity_scores))
+
+    print("\n\n*******************************\nFinished Running LBE_Output_Similarity.py\n\n")
 
 if __name__ == '__main__':
     main()
