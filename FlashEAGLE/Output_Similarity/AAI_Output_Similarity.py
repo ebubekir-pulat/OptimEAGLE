@@ -1,25 +1,44 @@
-print("\n\n*******************************\nStarting Output_Similarity.py\n\n")
+print("\n\n*******************************\nStarting AAI_Output_Similarity.py\n\n")
 
 from FlagEmbedding import BGEM3FlagModel
 import numpy as np
 
-# Below Code From: https://huggingface.co/BAAI/bge-m3
+# Code in main() From: https://huggingface.co/BAAI/bge-m3
 def main():
-    first_answers = ["My name is Bob.", "Where is the Chicken?"]
-    second_answers = ["My name is Bob.", "My name is Bob."]
-    similarity_scores = []
-
     model = BGEM3FlagModel('BAAI/bge-m3',  
                         use_fp16=True)
     
-    for i in range(len(first_answers)):
-        embeddings_1 = model.encode(first_answers[i])['dense_vecs']
-        embeddings_2 = model.encode(second_answers[i])['dense_vecs']
-        similarity = embeddings_1 @ embeddings_2.T
-        similarity_scores.append(similarity)
+    # Comparing Autoregressive Decoding Outputs
 
-    print("Mean Similarity Score: ", np.mean(similarity_scores))
-    print("\n\n*******************************\nFinished Running Output_Similarity.py\n\n")
+    # Note: Copy Experimental Output Into Corresponding Empty Arrays
+    autoreg_notrans = []
+    autoreg_trans = []
+    autoreg_similarity_scores = []
+    
+    for i in range(len(autoreg_notrans)):
+        embeddings_1 = model.encode(autoreg_notrans[i])['dense_vecs']
+        embeddings_2 = model.encode(autoreg_trans[i])['dense_vecs']
+        similarity = embeddings_1 @ embeddings_2.T
+        autoreg_similarity_scores.append(similarity)
+
+    print("\nMean Similarity Score Between AutoReg-NoTranslate & AutoReg-Translate: ", np.mean(autoreg_similarity_scores))
+
+    # Comparing EAGLE-3 Outputs
+
+    # Note: Copy Experimental Output Into Corresponding Empty Arrays
+    eagle3_notrans = []
+    eagle3_trans = []
+    eagle3_similarity_scores = []
+    
+    for i in range(len(eagle3_notrans)):
+        embeddings_1 = model.encode(eagle3_notrans[i])['dense_vecs']
+        embeddings_2 = model.encode(eagle3_trans[i])['dense_vecs']
+        similarity = embeddings_1 @ embeddings_2.T
+        eagle3_similarity_scores.append(similarity)
+
+    print("\nMean Similarity Score Between EAGLE3-NoTranslate & EAGLE3-Translate: ", np.mean(eagle3_similarity_scores))
+
+    print("\n\n*******************************\nFinished Running AAI_Output_Similarity.py\n\n")
 
 if __name__ == '__main__':
     main()
