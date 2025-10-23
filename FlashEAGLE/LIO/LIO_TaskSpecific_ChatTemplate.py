@@ -1,4 +1,4 @@
-# Task-Specific LIO Testing on Spec-Bench (with Speculative Decoding Parameters Focus)
+# Task-Specific LIO of Chat Template - Testing on Spec-Bench
 # Hyperparameters: test_runs, max_new_tokens, temp
 
 import subprocess
@@ -19,7 +19,7 @@ import openai
 import Data
 
 def main():
-    print("\n\n*******************************\nStarting LIO_TaskSpecific_Spec_Test.py\n\n")
+    print("\n\n*******************************\nStarting LIO_TaskSpecific_ChatTemplate.py\n\n")
 
     print("Python Version:")
 
@@ -40,7 +40,6 @@ def main():
     tasks_set = set()
     for task in tasks:
         tasks_set.add(task)
-    optim_params = {}
 
     print("\n\nTasks Set: ", tasks_set)
 
@@ -57,17 +56,24 @@ def main():
     client = openai.Client(base_url=f"http://127.0.0.1:{port}/v1", api_key="None")
 
     for task in tasks_set:
-        LIO_prompt = f"Generate optimal hyperparameters for EAGLE-3 speculative decoding with SGLANG, where the \
-                    base model to be used is {base_model_paths[0]}, the EAGLE-3 model to be used is {EAGLE_model_paths[0]} and \
-                    the dataset to be tested on is Spec-Bench. Spec-Bench is a benchmark covering multi-turn conversation, \
+        # Reference for below prompt: https://docs.sglang.ai/references/custom_chat_template.html
+        LIO_prompt = f'Generate a chat template for EAGLE-3 speculative decoding with SGLANG, where the \
+                    base model to be used is {base_model_paths[0]}, the EAGLE-3 model to be used is {EAGLE_model_paths[0]} \
+                    and the dataset to be tested on is Spec-Bench. Spec-Bench is a benchmark covering multi-turn conversation, \
                     translation, summarisation, question answering, mathematical reasoning and retrieval-augmented generation, \
                     consisting of samples from the MT-bench, WMT14 DE-EN, CNN/Daily Mail, Natural Questions, GSM8K and DPR \
-                    datasets. The specific task type to optimise for is {task}. Provide hyperparameters that optimise acceptance length, tokens generated per second and \
-                    wall-time speedup. Specifically, provide values for these parameters: --speculative-num-steps, --speculative-eagle-topk, --speculative-num-draft-tokens and \
-                    --speculative-attention-mode (prefill or decode). Avoid extreme values that can cause errors. Generate the hyperparameters in the format --parameter-name value, with spaces in between. \
-                    Before providing the hyperparameters, put a #START delimiter, and when finished, put a #END delimiter. THIS IS IMPORTANT. \
-                    Make sure to follow the format, and ensure your total output is within 8192 tokens MAXIMUM! \
-                    REMEMBER TO OPTIMISE FOR THE {task} TASK TYPE SPECIFICALLY!"
+                    datasets. The specific task type to optimise for is {task}. Generate a chat template file to feed into SGLANG\'s --chat-template parameter. \
+                    There is an example chat template below, but be creative and make big changes for maximum performance gains \
+                    to optimise acceptance length, tokens generated per second and wall-time speedup: \
+                    {{"name": "my_model", \
+                    "system": "<|im_start|>system", \
+                    "user": ""<|im_start|>user"", \
+                    "assistant": "<|im_start|>assistant", \
+                    "sep_style": "CHATML", \
+                    "sep": "<|im_end|>", \
+                    "stop_str": ["<|im_end|>", "<|im_start|>"] \
+                    "}} \nBefore providing the chat template, put a #START delimiter, and when finished, put a #END delimiter. \
+                    REMEMBER TO OPTIMISE FOR THE {task} TASK TYPE SPECIFICALLY!'
         
         print("Task: ", task, " LIO Prompt:\n", LIO_prompt, "\nEND OF LIO PROMPT")
 
@@ -86,7 +92,10 @@ def main():
         print("Task: ", task, " LIO Output Before Processing:\n", LIO_output, "\nEND OF LIO OUTPUT")
         LIO_output = Data.extract_LIO_response(LIO_output)
         print("Task: ", task, " LIO Output:\n", LIO_output, "\nEND OF LIO OUTPUT")
-        optim_params[task] = LIO_output
+
+        # Reference for below code block: https://www.w3schools.com/python/python_file_write.asp
+        with open(f"ChatTemplate_{task}.json", "x") as f:
+            f.write(LIO_output)
 
     # Below Code Line From: https://docs.sglang.ai/advanced_features/speculative_decoding.html
     terminate_process(server_process)
@@ -116,7 +125,7 @@ def main():
     server_process, port = launch_server_cmd(
         f"""
     python3 -m sglang.launch_server --model {base_model_paths[0]}  --speculative-algorithm EAGLE3 \
-        --speculative-draft-model-path {EAGLE_model_paths[0]} {optim_params[tasks[0]]}
+        --speculative-draft-model-path {EAGLE_model_paths[0]} --chat-template ChatTemplate_{tasks[0]}.json
     """
     )
 
@@ -144,7 +153,7 @@ def main():
                 server_process, port = launch_server_cmd(
                     f"""
                 python3 -m sglang.launch_server --model {base_model_paths[0]}  --speculative-algorithm EAGLE3 \
-                    --speculative-draft-model-path {EAGLE_model_paths[0]} {optim_params[curr_task]}
+                    --speculative-draft-model-path {EAGLE_model_paths[0]} --chat-template ChatTemplate_{curr_task}.json
                 """
                 )
 
@@ -201,7 +210,7 @@ def main():
     print("\n\nOutput Data: \n")
     print(LIO_outputs)
 
-    print("\n\n*******************************\nFinished Running LIO_TaskSpecific_Spec_Test.py\n\n")
+    print("\n\n*******************************\nFinished Running LIO_TaskSpecific_ChatTemplate.py\n\n")
 
 if __name__ == "__main__":
     main()

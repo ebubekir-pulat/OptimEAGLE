@@ -1,4 +1,4 @@
-# Task-Specific LIO Testing on Spec-Bench 
+# Task-Specific LIO Testing on Spec-Bench (With Less Server Arguments) 
 # Hyperparameters: test_runs, max_new_tokens, temp
 
 import subprocess
@@ -19,7 +19,7 @@ import openai
 import Data
 
 def main():
-    print("\n\n*******************************\nStarting LIO_TaskSpecific_Test.py\n\n")
+    print("\n\n*******************************\nStarting LIO_TaskSpecific_Simplified_Test.py\n\n")
 
     print("Python Version:")
 
@@ -64,31 +64,26 @@ def main():
                     consisting of samples from the MT-bench, WMT14 DE-EN, CNN/Daily Mail, Natural Questions, GSM8K and DPR \
                     datasets. The specific task type to optimise for is {task}. Choose hyperparameters that optimise acceptance length, tokens generated per second and \
                     wall-time speedup. Provide values for these parameters, or ignore them if you intend to keep the default value: --kv-cache-dtype ('auto', 'fp8_e5m2'), \
-                    --stream-interval, --max-prefill-tokens, --chunked-prefill-size, --speculative-num-steps, \
-                --disable-outlines-disk-cache (To Select Option, Simply Write Parameter), --enable-tokenizer-batch-encode (To Select Option, Simply Write Parameter), \
+                    --stream-interval, --chunked-prefill-size, --speculative-num-steps, \
                 --speculative-eagle-topk, --speculative-num-draft-tokens, --speculative-attention-mode (prefill or decode), \
-                --disable-radix-cache (To Select Option, Simply Write Parameter), --cuda-graph-max-bs, \
-                --enable-dp-lm-head (To Select Option, Simply Write Parameter), --enable-two-batch-overlap (To Select Option, Simply Write Parameter), \
+                --cuda-graph-max-bs, \
+                --enable-dp-lm-head (To Select Option, Simply Write Parameter), \
                 --tbo-token-distribution-threshold, --enable-torch-compile (To Select Option, Simply Write Parameter), --torch-compile-max-bs, \
-                --triton-attention-reduce-in-fp32 (To Select Option, Simply Write Parameter), --triton-attention-num-kv-splits, --num-continuous-decode-steps, \
-                --enable-memory-saver (To Select Option, Simply Write Parameter), \
-                --enable-return-hidden-states (To Select Option, Simply Write Parameter), \
-                --reasoning-parser (deepseek-r1,deepseek-v3,glm45,gpt-oss,kimi,qwen3,qwen3-thinking,step3) \
-                --tool-call-parser (llama3,qwen25,mistral,deepseekv3,deepseekv31,pythonic,kimi_k2,qwen3_coder,glm45,step3,gpt-oss) \
-                --attention-backend (triton,torch_native,cutlass_mla,fa3,flashinfer,flashmla,trtllm_mla,trtllm_mha,dual_chunk_flash_attn,hybrid_linear_attn,aiter,wave,intel_amx,ascend) \
-                --prefill-attention-backend (triton,torch_native,cutlass_mla,fa3,flashinfer,flashmla,trtllm_mla,trtllm_mha,dual_chunk_flash_attn,hybrid_linear_attn,aiter,wave,intel_amx,ascend) \
-                --decode-attention-backend (triton,torch_native,cutlass_mla,fa3,flashinfer,flashmla,trtllm_mla,trtllm_mha,dual_chunk_flash_attn,hybrid_linear_attn,aiter,wave,intel_amx,ascend) \
-                --sampling-backend (flashinfer,pytorch) \
-                --grammar-backend (xgrammar,outlines,llguidance,none) \
-                --mm-attention-backend (sdpa,fa3,triton_attn) \
-                --moe-runner-backend (auto,triton,triton_kernel,flashinfer_trtllm,flashinfer_cutlass,flashinfer_mxfp4,flashinfer_cutedsl) \
-                --flashinfer-mxfp4-moe-precision (default,bf16) \
-                --moe-a2a-backend (none,deepep) \
-                --enable-flashinfer-allreduce-fusion (To Select Option, Simply Write Parameter) \
-                --deepep-mode (normal,low_latency,auto) \
-                --disable-fast-image-processor (To Select Option, Simply Write Parameter), --disable-chunked-prefix-cache (To Select Option, Simply Write Parameter), \
-                --flashinfer-mla-disable-ragged (To Select Option, Simply Write Parameter), --dtype ('auto', 'half', 'bfloat16', 'float', 'float32') and \
-                --disable-shared-experts-fusion (To Select Option, Simply Write Parameter). Generate the hyperparameters in the format --parameter-name value, \
+                --triton-attention-num-kv-splits, --num-continuous-decode-steps, \
+                --reasoning-parser (deepseek-r1,deepseek-v3,glm45,gpt-oss,kimi,qwen3,qwen3-thinking,step3), \
+                --tool-call-parser (llama3,qwen25,mistral,deepseekv3,deepseekv31,pythonic,kimi_k2,qwen3_coder,glm45,step3,gpt-oss), \
+                --attention-backend (triton,torch_native,cutlass_mla,fa3,flashinfer,flashmla,trtllm_mla,trtllm_mha,dual_chunk_flash_attn,hybrid_linear_attn,aiter,wave,intel_amx,ascend), \
+                --prefill-attention-backend (triton,torch_native,cutlass_mla,fa3,flashinfer,flashmla,trtllm_mla,trtllm_mha,dual_chunk_flash_attn,hybrid_linear_attn,aiter,wave,intel_amx,ascend), \
+                --decode-attention-backend (triton,torch_native,cutlass_mla,fa3,flashinfer,flashmla,trtllm_mla,trtllm_mha,dual_chunk_flash_attn,hybrid_linear_attn,aiter,wave,intel_amx,ascend), \
+                --sampling-backend (flashinfer,pytorch), \
+                --grammar-backend (xgrammar,outlines,llguidance,none), \
+                --mm-attention-backend (sdpa,fa3,triton_attn), \
+                --moe-runner-backend (auto,triton,triton_kernel,flashinfer_trtllm,flashinfer_cutlass,flashinfer_mxfp4,flashinfer_cutedsl), \
+                --flashinfer-mxfp4-moe-precision (default,bf16), \
+                --moe-a2a-backend (none,deepep), \
+                --enable-flashinfer-allreduce-fusion (To Select Option, Simply Write Parameter), \
+                --deepep-mode (normal,low_latency,auto) and \
+                --dtype ('auto', 'half', 'bfloat16', 'float', 'float32'). Generate the hyperparameters in the format --parameter-name value, \
                 with spaces in between. For parameters where I have specified, 'To Select Option, Simply Write Parameter', don't include \
                 a value if you want to use that setting, and don't write the parameter at all if you don't want that setting. For parameters where I have specified options, \
                 those are the only available values to choose from, nothing else is allowed. Before providing the hyperparameters, \
@@ -228,7 +223,7 @@ def main():
     print("\n\nOutput Data: \n")
     print(LIO_outputs)
 
-    print("\n\n*******************************\nFinished Running LIO_TaskSpecific_Test.py\n\n")
+    print("\n\n*******************************\nFinished Running LIO_TaskSpecific_Simplified_Test.py\n\n")
 
 if __name__ == "__main__":
     main()
