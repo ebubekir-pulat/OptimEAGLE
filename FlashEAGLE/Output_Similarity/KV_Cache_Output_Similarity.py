@@ -1,53 +1,77 @@
-print("\n\n*******************************\nStarting LBE_Output_Similarity.py\n\n")
-
 from FlagEmbedding import BGEM3FlagModel
 import numpy as np
 
 # Code in main() From: https://huggingface.co/BAAI/bge-m3
 def main():
+    print("\n\n*******************************\nStarting KV_Cache_Output_Similarity.py\n\n")
+    
     model = BGEM3FlagModel('BAAI/bge-m3',  
                         use_fp16=True)
     
-    # Comparing Autoregressive Decoding Outputs
+    # Analysing KV Cache Test Outputs
     # Note: Copy Experimental Output Into Corresponding Empty Arrays
-    autoreg_standard = []
-    autoreg_summ = []
-    autoreg_skip = []
-    autoreg_ranked = []
-    autoreg_similarity_scores = []
+    baseline = []
+    bottom_5 = []
+    top_5 = []
+    bottom_third = []
+    middle_third = []
+    top_third = []
+    similarity_scores = []
     
-    # Output Quality of AutoReg-summ
-    for i in range(len(autoreg_standard)):
-        embeddings_1 = model.encode(autoreg_standard[i])['dense_vecs']
-        embeddings_2 = model.encode(autoreg_summ[i])['dense_vecs']
+    # Output Quality of BOTTOM-5 Test
+    for i in range(len(baseline)):
+        embeddings_1 = model.encode(baseline[i])['dense_vecs']
+        embeddings_2 = model.encode(bottom_5[i])['dense_vecs']
         similarity = embeddings_1 @ embeddings_2.T
-        autoreg_similarity_scores.append(similarity)
+        similarity_scores.append(similarity)
 
-    print("\nMean Similarity Score Between AutoReg-Standard & AutoReg-Summ: ", np.mean(autoreg_similarity_scores))
+    print("\nMean Similarity Score Between BASELINE-0 & BOTTOM-5: ", np.mean(similarity_scores))
 
-    # Output Quality of AutoReg-skip
-    autoreg_similarity_scores = []
+    # Output Quality of TOP-5 Test
+    similarity_scores = []
     
-    for i in range(len(autoreg_standard)):
-        embeddings_1 = model.encode(autoreg_standard[i])['dense_vecs']
-        embeddings_2 = model.encode(autoreg_skip[i])['dense_vecs']
+    for i in range(len(baseline)):
+        embeddings_1 = model.encode(baseline[i])['dense_vecs']
+        embeddings_2 = model.encode(top_5[i])['dense_vecs']
         similarity = embeddings_1 @ embeddings_2.T
-        autoreg_similarity_scores.append(similarity)
+        similarity_scores.append(similarity)
 
-    print("\nMean Similarity Score Between AutoReg-Standard & AutoReg-skip: ", np.mean(autoreg_similarity_scores))
+    print("\nMean Similarity Score Between BASELINE-0 & TOP-5: ", np.mean(similarity_scores))
 
-    # Output Quality of AutoReg-ranked
-    autoreg_similarity_scores = []
+    # Output Quality of BOTTOM-THIRD
+    similarity_scores = []
     
-    for i in range(len(autoreg_standard)):
-        embeddings_1 = model.encode(autoreg_standard[i])['dense_vecs']
-        embeddings_2 = model.encode(autoreg_ranked[i])['dense_vecs']
+    for i in range(len(baseline)):
+        embeddings_1 = model.encode(baseline[i])['dense_vecs']
+        embeddings_2 = model.encode(bottom_third[i])['dense_vecs']
         similarity = embeddings_1 @ embeddings_2.T
-        autoreg_similarity_scores.append(similarity)
+        similarity_scores.append(similarity)
 
-    print("\nMean Similarity Score Between AutoReg-Standard & AutoReg-ranked: ", np.mean(autoreg_similarity_scores))
+    print("\nMean Similarity Score Between BASELINE-0 & BOTTOM-THIRD: ", np.mean(similarity_scores))
 
-    print("\n\n*******************************\nFinished Running LBE_Output_Similarity.py\n\n")
+    # Output Quality of MIDDLE-THIRD
+    similarity_scores = []
+    
+    for i in range(len(baseline)):
+        embeddings_1 = model.encode(baseline[i])['dense_vecs']
+        embeddings_2 = model.encode(middle_third[i])['dense_vecs']
+        similarity = embeddings_1 @ embeddings_2.T
+        similarity_scores.append(similarity)
+
+    print("\nMean Similarity Score Between BASELINE-0 & MIDDLE-THIRD: ", np.mean(similarity_scores))
+
+    # Output Quality of TOP-THIRD
+    similarity_scores = []
+    
+    for i in range(len(baseline)):
+        embeddings_1 = model.encode(baseline[i])['dense_vecs']
+        embeddings_2 = model.encode(top_third[i])['dense_vecs']
+        similarity = embeddings_1 @ embeddings_2.T
+        similarity_scores.append(similarity)
+
+    print("\nMean Similarity Score Between BASELINE-0 & TOP-THIRD: ", np.mean(similarity_scores))
+
+    print("\n\n*******************************\nFinished Running KV_Cache_Output_Similarity.py\n\n")
 
 if __name__ == '__main__':
     main()
