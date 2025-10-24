@@ -64,9 +64,8 @@ def main():
                     consisting of samples from the MT-bench, WMT14 DE-EN, CNN/Daily Mail, Natural Questions, GSM8K and DPR \
                     datasets. The specific task type to optimise for is {task}. Choose hyperparameters that optimise acceptance length, tokens generated per second and \
                     wall-time speedup. Provide values for these parameters, or ignore them if you intend to keep the default value: --kv-cache-dtype ('auto', 'fp8_e5m2'), \
-                    --stream-interval, --chunked-prefill-size, --speculative-num-steps, \
+                    --stream-interval, --speculative-num-steps, \
                 --speculative-eagle-topk, --speculative-num-draft-tokens, --speculative-attention-mode (prefill or decode), \
-                --cuda-graph-max-bs, \
                 --enable-dp-lm-head (To Select Option, Simply Write Parameter), \
                 --tbo-token-distribution-threshold, --enable-torch-compile (To Select Option, Simply Write Parameter), --torch-compile-max-bs, \
                 --triton-attention-num-kv-splits, --num-continuous-decode-steps, \

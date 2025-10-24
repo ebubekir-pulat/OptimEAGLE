@@ -73,7 +73,7 @@ def main():
                     "sep": "<|im_end|>", \
                     "stop_str": ["<|im_end|>", "<|im_start|>"] \
                     "}} \nBefore providing the chat template, put a #START delimiter, and when finished, put a #END delimiter. \
-                    REMEMBER TO OPTIMISE FOR THE {task} TASK TYPE SPECIFICALLY!'
+                    YOU MUST ENSURE YOUR MODEL OUTPUT IS CONCISE, AS MAX_TOKENS IS SET TO 8192 FOR THIS PROMPT! REMEMBER TO OPTIMISE FOR THE {task} TASK TYPE SPECIFICALLY!'
         
         print("Task: ", task, " LIO Prompt:\n", LIO_prompt, "\nEND OF LIO PROMPT")
 
