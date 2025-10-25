@@ -88,7 +88,7 @@ def main():
                 those are the only available values to choose from, nothing else is allowed. Before providing the hyperparameters, \
                 put a #START delimiter, and when finished, put a #END delimiter. THIS IS IMPORTANT. Note, if choosing to keep the default value for a parameter, \
                 DO NOT LIST THE PARAMETER IN BETWEEN THE DELIMITERS. Make sure to follow the format, and ensure your total output is within 8192 tokens MAXIMUM! \
-                REMEMBER TO OPTIMISE FOR THE {task} TASK TYPE SPECIFICALLY!"
+                AVOID EXTREME VALUES THAT MAY RESULT IN ERRORS! REMEMBER TO OPTIMISE FOR THE {task} TASK TYPE SPECIFICALLY!"
         
         print("Task: ", task, " LIO Prompt:\n", LIO_prompt, "\nEND OF LIO PROMPT")
 
