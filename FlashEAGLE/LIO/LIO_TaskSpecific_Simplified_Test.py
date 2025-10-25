@@ -67,8 +67,8 @@ def main():
                     --stream-interval, --speculative-num-steps, \
                 --speculative-eagle-topk, --speculative-num-draft-tokens, --speculative-attention-mode (prefill or decode), \
                 --enable-dp-lm-head (To Select Option, Simply Write Parameter), \
-                --tbo-token-distribution-threshold, --enable-torch-compile (To Select Option, Simply Write Parameter), --torch-compile-max-bs, \
-                --triton-attention-num-kv-splits, --num-continuous-decode-steps, \
+                --tbo-token-distribution-threshold, --enable-torch-compile (To Select Option, Simply Write Parameter), \
+                --num-continuous-decode-steps, \
                 --reasoning-parser (deepseek-r1,deepseek-v3,glm45,gpt-oss,kimi,qwen3,qwen3-thinking,step3), \
                 --tool-call-parser (llama3,qwen25,mistral,deepseekv3,deepseekv31,pythonic,kimi_k2,qwen3_coder,glm45,step3,gpt-oss), \
                 --attention-backend (triton,torch_native,cutlass_mla,fa3,flashinfer,flashmla,trtllm_mla,trtllm_mha,dual_chunk_flash_attn,hybrid_linear_attn,aiter,wave,intel_amx,ascend), \
