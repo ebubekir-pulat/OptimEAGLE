@@ -1,20 +1,6 @@
-# FlashEAGLE
+# OptimEAGLE
 ## Student: Ebubekir Pulat
 ## Supervisor: Dr. Liang Yuan
 
 ## Description:
-This repository is for the official implementation of FlashEAGLE.
-
-## Using Code:
-Get Necessary Packages Using:
-'''
-pip install -r requirements.txt
-''' 
-
-Use Python 3.12 Conda Environment
-conda create -n flash_eagle python=3.12
-  
-  
-For SGLANG environment,  
-pip install uv  
-uv pip install "sglang[all]>=0.5.1.post1" 
+This repository contains code to reproduce the results of OptimEAGLE.
