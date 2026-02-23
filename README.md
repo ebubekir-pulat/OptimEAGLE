@@ -3,4 +3,4 @@
 ## Supervisor: Dr. Liang Yuan
 
 ## Description:
-This repository contains code to reproduce the results of OptimEAGLE.
+This repository contains the code used to obtain the results for OptimEAGLE.
